@@ -1,0 +1,97 @@
+{
+  "input_url": "https://www.facebook.com/",
+  "final_url": "https://www.facebook.com/",
+  "signals": {
+    "status_code": 200,
+    "text_length": 567,
+    "form_count": 1,
+    "password_fields": 1,
+    "email_mentions": 0,
+    "outlink_count": 34
+  },
+  "dns": {
+    "a_records": [
+      "57.144.208.1"
+    ],
+    "aaaa_records": [],
+    "mx_records": [
+      "smtpin.vvv.facebook.com."
+    ],
+    "ns_records": [
+      "b.ns.facebook.com.",
+      "a.ns.facebook.com.",
+      "c.ns.facebook.com.",
+      "d.ns.facebook.com."
+    ],
+    "txt_records": [],
+    "cname_records": [],
+    "ttl_avg": null
+  },
+  "rdap": {
+    "registrar": "RegistrarSafe, LLC",
+    "creation_date": "1997-03-29T05:00:00",
+    "expiration_date": "2034-03-30T04:00:00",
+    "updated_date": null,
+    "name_servers": [],
+    "status": []
+  },
+  "metadata": {
+    "job_id": "e5da43ec-0e66-4d61-ba65-714b6b7370d7",
+    "registered_domain": "facebook.com",
+    "scraped_at": "2026-09-19T06:33:29.944969+00:00",
+    "duration_ms": 16835.260152816772,
+    "is_partial": false
+  },
+  "ml_features": {
+    "url_length": 25,
+    "domain_length": 16,
+    "path_length": 1,
+    "num_subdomains": 0,
+    "num_dots": 2,
+    "domain_num_hyphens": 0,
+    "num_special_chars": 6,
+    "ip_address": "",
+    "url_entropy": 3.8332696895151077,
+    "is_idn": 0,
+    "typosquatting_score": "High",
+    "brand_word_present": 1,
+    "misleading_keyword_present": 0,
+    "brand_position": "subdomain",
+    "domain_age_days": 10766,
+    "HTTPS": true,
+    "Is_Tunneling": 0,
+    "ttl_avg": 13.0,
+    "ssim_score": 1.0,
+    "favicon_similarity_score": 1.0,
+    "asn_number": 32934,
+    "reverse_dns_entropy": 4.211702142428217,
+    "hosting_ip": "57.144.208.1",
+    "domain_exists": true,
+    "registrant_country": "US",
+    "hosting_isp": "FACEBOOK - Facebook, Inc., US",
+    "registrant_name": "Domain Admin",
+    "domain_registration_date": "1997-03-29T05:00:00",
+    "registrant_organisation": "Meta Platforms, Inc.",
+    "hosting_country": "IE",
+    "name_servers": "a.ns.facebook.com, b.ns.facebook.com, c.ns.facebook.com, d.ns.facebook.com, a.ns.facebook.com, b.ns.facebook.com, c.ns.facebook.com, d.ns.facebook.com"
+  },
+  "ml_prediction": {
+    "prediction": "legitimate",
+    "confidence": 0.8749935030937195,
+    "probabilities": {
+      "Legitimate": 0.8749935030937195,
+      "Phishing": 0.08190137147903442,
+      "Suspected": 0.043105196207761765
+    },
+    "risk_score": 0.12500649690628052,
+    "reasoning": [
+      "Domain is established (29.5 years old) - trustworthy",
+      "Domain appears to be typosquatting a known brand - high risk",
+      "Brand name found in subdomain - common phishing tactic",
+      "Website appearance is very similar to known brand (SSIM: 1.00)",
+      "Favicon matches known brand (1.00) - could be impersonation",
+      "Low DNS TTL (13s) - may indicate temporary/malicious infrastructure"
+    ],
+    "top_features": []
+  }
+}

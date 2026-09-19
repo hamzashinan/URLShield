@@ -1,0 +1,94 @@
+{
+  "brand_keywords": [
+    "airtel",
+    "amazon.in",
+    "bankofbaroda",
+    "crsorgi",
+    "facebook.com",
+    "hdfc",
+    "hdfcbank",
+    "hdfcergo",
+    "icici",
+    "iocl",
+    "irctc",
+    "mgovcloud",
+    "ncrb",
+    "pnb",
+    "pnbindia",
+    "sbi",
+    "sbicard",
+    "sbilife"
+  ],
+  "misleading_keywords": [
+    "legitmate",
+    "login"
+  ],
+  "brand_mappings": [
+    {
+      "brand": "airtel",
+      "domain": "airtel.in"
+    },
+    {
+      "brand": "bankofbaroda",
+      "domain": "bankofbaroda.in"
+    },
+    {
+      "brand": "crsorgi",
+      "domain": "dc.crsorgi.gov.in"
+    },
+    {
+      "brand": "hdfc",
+      "domain": "hdfcbank.com"
+    },
+    {
+      "brand": "hdfcbank",
+      "domain": "hdfcbank.com"
+    },
+    {
+      "brand": "hdfcergo",
+      "domain": "hdfcergo.com"
+    },
+    {
+      "brand": "icici",
+      "domain": "icicibank.com"
+    },
+    {
+      "brand": "iocl",
+      "domain": "iocl.com"
+    },
+    {
+      "brand": "irctc",
+      "domain": "irctc.co.in"
+    },
+    {
+      "brand": "mgovcloud",
+      "domain": "accounts.mgovcloud.in"
+    },
+    {
+      "brand": "ncrb",
+      "domain": "ncrb.gov.in"
+    },
+    {
+      "brand": "pnb",
+      "domain": "pnbindia.in"
+    },
+    {
+      "brand": "pnbindia",
+      "domain": "pnbindia.in"
+    },
+    {
+      "brand": "sbi",
+      "domain": "sbi.co.in"
+    },
+    {
+      "brand": "sbicard",
+      "domain": "sbicard.com"
+    },
+    {
+      "brand": "sbilife",
+      "domain": "sbilife.co.in"
+    }
+  ],
+  "last_updated": "2026-05-07T04:58:27.652757",
+  "version": "1.1"
+}

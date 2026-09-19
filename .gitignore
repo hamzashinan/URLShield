@@ -1,0 +1,7 @@
+# Python virtual environments
+.venv/
+venv/
+URLshield-backend/venv/
+
+# Frontend dependencies
+node_modules/
