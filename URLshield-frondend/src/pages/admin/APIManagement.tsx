@@ -40,7 +40,7 @@ const mockApiKeys: APIKey[] = [
 ];
 
 const mockWebhooks: WebhookConfig[] = [
-  { id: 'wh-1', url: 'https://slack.com/api/webhooks/yodhac-alerts', events: ['threat.detected', 'scan.complete'], status: 'active', lastDelivery: '5 min ago', successRate: 99.8 },
+  { id: 'wh-1', url: 'https://slack.com/api/webhooks/urlshield-alerts', events: ['threat.detected', 'scan.complete'], status: 'active', lastDelivery: '5 min ago', successRate: 99.8 },
   { id: 'wh-2', url: 'https://api.pagerduty.com/incidents', events: ['threat.critical'], status: 'active', lastDelivery: '1 hour ago', successRate: 100 },
   { id: 'wh-3', url: 'https://hooks.internal.corp/siem', events: ['audit.log', 'threat.detected', 'user.login'], status: 'failing', lastDelivery: '3 days ago', successRate: 45.2 },
 ];
@@ -343,7 +343,7 @@ export const APIManagement: React.FC = () => {
               <ExternalLink size={28} className="text-primary" />
             </div>
             <h2 className="text-xl font-semibold text-text mb-2">API Documentation</h2>
-            <p className="text-sm text-text-secondary mb-6">Explore the complete YodhaC.Ai REST API reference with interactive examples.</p>
+            <p className="text-sm text-text-secondary mb-6">Explore the complete URLShield REST API reference with interactive examples.</p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
               {[
                 { title: 'Getting Started', desc: 'Authentication, rate limits, and quickstart guide', icon: Key },

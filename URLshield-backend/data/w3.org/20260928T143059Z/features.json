@@ -1,0 +1,38 @@
+{
+  "input_url": "https://www.w3.org",
+  "final_url": "https://www.w3.org/",
+  "signals": {
+    "status_code": 200,
+    "text_length": 0,
+    "form_count": 0,
+    "password_fields": 0,
+    "email_mentions": 0,
+    "outlink_count": 0
+  },
+  "dns": {
+    "a_records": [
+      "104.18.23.19",
+      "104.18.22.19"
+    ],
+    "aaaa_records": [],
+    "mx_records": [
+      "puck.w3.org.",
+      "pan.w3.org."
+    ],
+    "ns_records": [
+      "jamie.ns.cloudflare.com.",
+      "pranab.ns.cloudflare.com."
+    ],
+    "txt_records": [],
+    "cname_records": [],
+    "ttl_avg": null
+  },
+  "rdap": {},
+  "metadata": {
+    "job_id": "8e3208b7-a609-4020-b2c1-73111eb55f87",
+    "registered_domain": "w3.org",
+    "scraped_at": "2026-09-28T14:31:50.513290+00:00",
+    "duration_ms": 51466.21632575989,
+    "is_partial": false
+  }
+}

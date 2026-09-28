@@ -1,0 +1,40 @@
+{
+  "input_url": "https://www.stackoverflow.com",
+  "final_url": "https://www.stackoverflow.com",
+  "signals": {
+    "status_code": 0,
+    "text_length": 0,
+    "form_count": 0,
+    "password_fields": 0,
+    "email_mentions": 0,
+    "outlink_count": 0
+  },
+  "dns": {
+    "a_records": [
+      "198.252.206.1"
+    ],
+    "aaaa_records": [],
+    "mx_records": [
+      "alt3.aspmx.l.google.com.",
+      "alt4.aspmx.l.google.com.",
+      "alt1.aspmx.l.google.com.",
+      "alt2.aspmx.l.google.com.",
+      "aspmx.l.google.com."
+    ],
+    "ns_records": [
+      "damian.ns.cloudflare.com.",
+      "sureena.ns.cloudflare.com."
+    ],
+    "txt_records": [],
+    "cname_records": [],
+    "ttl_avg": null
+  },
+  "rdap": {},
+  "metadata": {
+    "job_id": "4f5272ad-4d8f-489a-b291-da4c2ed0c443",
+    "registered_domain": "stackoverflow.com",
+    "scraped_at": "2026-09-28T14:32:08.420377+00:00",
+    "duration_ms": 69391.26968383789,
+    "is_partial": false
+  }
+}

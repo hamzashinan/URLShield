@@ -14,7 +14,7 @@ export const ExportDrawer: React.FC<ExportDrawerProps> = ({ isOpen, onClose }) =
 
   if (!isOpen) return null;
 
-  const filename = `yodhac-export-${new Date().toISOString().split('T')[0]}.${selectedFormat}`;
+  const filename = `urlshield-export-${new Date().toISOString().split('T')[0]}.${selectedFormat}`;
 
   return (
     <>

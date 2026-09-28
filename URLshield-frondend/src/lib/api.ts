@@ -1,4 +1,4 @@
-// YodhaC.Ai API Client
+// URLShield API Client
 // Handles all backend communication with authentication and error handling
 
 import type {
@@ -26,7 +26,7 @@ import type {
   BulkUserActionResponse,
 } from '../types/api';
 
-class YodhaCAPIClient {
+class URLShieldAPIClient {
   private baseURL: string;
   private apiKey: string;
   private timeout: number = 30000; // 30 seconds
@@ -37,8 +37,8 @@ class YodhaCAPIClient {
 
     // Match the backend defaults used by URLShield so the app works immediately
     // without requiring the user to manually configure settings first.
-    const storedBaseURL = localStorage.getItem('yodhac_api_url');
-    const storedApiKey = localStorage.getItem('yodhac_api_key');
+    const storedBaseURL = localStorage.getItem('urlshield_api_url');
+    const storedApiKey = localStorage.getItem('urlshield_api_key');
 
     this.baseURL = storedBaseURL && storedBaseURL !== 'null' && storedBaseURL !== 'undefined'
       ? storedBaseURL
@@ -52,12 +52,12 @@ class YodhaCAPIClient {
     // using an invalid key from earlier runs while the backend is still on dev-secret-key.
     if (this.baseURL === defaultBaseURL && this.apiKey !== defaultApiKey) {
       this.apiKey = defaultApiKey;
-      localStorage.setItem('yodhac_api_key', defaultApiKey);
+      localStorage.setItem('urlshield_api_key', defaultApiKey);
     }
 
     if (!this.baseURL || this.baseURL === 'null' || this.baseURL === 'undefined') {
       this.baseURL = defaultBaseURL;
-      localStorage.setItem('yodhac_api_url', defaultBaseURL);
+      localStorage.setItem('urlshield_api_url', defaultBaseURL);
     }
   }
 
@@ -65,8 +65,8 @@ class YodhaCAPIClient {
   configure(baseURL: string, apiKey: string) {
     this.baseURL = baseURL;
     this.apiKey = apiKey;
-    localStorage.setItem('yodhac_api_url', baseURL);
-    localStorage.setItem('yodhac_api_key', apiKey);
+    localStorage.setItem('urlshield_api_url', baseURL);
+    localStorage.setItem('urlshield_api_key', apiKey);
   }
 
   // Get current configuration
@@ -607,7 +607,7 @@ class YodhaCAPIClient {
 }
 
 // Export singleton instance
-export const apiClient = new YodhaCAPIClient();
+export const apiClient = new URLShieldAPIClient();
 
 // Export class for testing
-export { YodhaCAPIClient };
+export { URLShieldAPIClient };

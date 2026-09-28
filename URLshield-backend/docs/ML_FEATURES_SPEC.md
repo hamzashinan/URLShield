@@ -87,7 +87,7 @@ url_entropy = calculate_shannon_entropy(url)
 
 ### Step 1: Generate Model-Ready Features
 ```python
-from yodhac.model_feature_provider import generate_model_features
+from URLshield.model_feature_provider import generate_model_features
 
 ml_features = generate_model_features(url, scraped_data)
 ```
@@ -99,7 +99,7 @@ Under the hood `generate_model_features`:
 
 ### Step 3: Validate Features
 ```python
-from yodhac.ml_feature_prep import validate_model_features
+from URLshield.ml_feature_prep import validate_model_features
 
 is_valid, missing = validate_model_features(ml_features)
 if not is_valid:
@@ -108,7 +108,7 @@ if not is_valid:
 
 ### Step 4: Make Prediction
 ```python
-from yodhac.predictor import predict_from_features
+from URLshield.predictor import predict_from_features
 
 prediction = predict_from_features({'ml_features': ml_features})
 ```
@@ -246,7 +246,7 @@ defaults = {
 ## Testing Feature Format
 
 ```python
-from yodhac.ml_feature_prep import validate_model_features, get_feature_summary
+from URLshield.ml_feature_prep import validate_model_features, get_feature_summary
 
 # Validate
 is_valid, missing = validate_model_features(ml_features)

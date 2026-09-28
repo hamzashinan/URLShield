@@ -1,0 +1,41 @@
+{
+  "input_url": "https://www.npmjs.com",
+  "final_url": "https://www.npmjs.com/",
+  "signals": {
+    "status_code": 200,
+    "text_length": 0,
+    "form_count": 0,
+    "password_fields": 0,
+    "email_mentions": 0,
+    "outlink_count": 0
+  },
+  "dns": {
+    "a_records": [
+      "104.17.135.117",
+      "104.17.134.117"
+    ],
+    "aaaa_records": [],
+    "mx_records": [
+      "alt2.aspmx.l.google.com.",
+      "aspmx2.googlemail.com.",
+      "aspmx3.googlemail.com.",
+      "aspmx.l.google.com.",
+      "alt1.aspmx.l.google.com."
+    ],
+    "ns_records": [
+      "sandy.ns.cloudflare.com.",
+      "bayan.ns.cloudflare.com."
+    ],
+    "txt_records": [],
+    "cname_records": [],
+    "ttl_avg": null
+  },
+  "rdap": {},
+  "metadata": {
+    "job_id": "0c24e7a0-c2ee-432f-9c3f-3c97e6cf05e5",
+    "registered_domain": "npmjs.com",
+    "scraped_at": "2026-09-28T14:31:41.995655+00:00",
+    "duration_ms": 42988.60144615173,
+    "is_partial": false
+  }
+}

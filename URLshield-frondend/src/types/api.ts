@@ -1,4 +1,4 @@
-// YodhaC.Ai API TypeScript Types
+// URLShield API TypeScript Types
 // Matches backend Pydantic models
 
 export interface HealthResponse {

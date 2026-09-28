@@ -1,0 +1,27 @@
+{
+  "batch_id": "e5e416ca-4993-40d2-b67e-35ca9dbf0c82",
+  "filename": "URLShield_20_Test_URLs.xlsx",
+  "urls": [
+    "https://www.google.com",
+    "https://www.github.com",
+    "https://www.microsoft.com",
+    "https://www.apple.com",
+    "https://www.amazon.com",
+    "https://www.wikipedia.org",
+    "https://www.python.org",
+    "https://www.djangoproject.com",
+    "https://fastapi.tiangolo.com",
+    "https://react.dev",
+    "https://nodejs.org",
+    "https://www.mozilla.org",
+    "https://www.cloudflare.com",
+    "https://www.linkedin.com",
+    "https://www.npmjs.com",
+    "https://www.stackoverflow.com",
+    "https://www.w3.org",
+    "https://www.openstreetmap.org",
+    "https://www.iana.org",
+    "https://example.com"
+  ],
+  "created_at": "2026-09-28T14:30:58.502695+00:00"
+}

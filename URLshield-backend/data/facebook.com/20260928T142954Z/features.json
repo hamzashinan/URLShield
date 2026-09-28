@@ -1,0 +1,89 @@
+{
+  "input_url": "https://www.facebook.com/",
+  "final_url": "https://www.facebook.com/",
+  "signals": {
+    "status_code": 200,
+    "text_length": 0,
+    "form_count": 0,
+    "password_fields": 0,
+    "email_mentions": 0,
+    "outlink_count": 0
+  },
+  "dns": {
+    "a_records": [
+      "57.144.46.1"
+    ],
+    "aaaa_records": [],
+    "mx_records": [
+      "smtpin.vvv.facebook.com."
+    ],
+    "ns_records": [
+      "c.ns.facebook.com.",
+      "d.ns.facebook.com.",
+      "b.ns.facebook.com.",
+      "a.ns.facebook.com."
+    ],
+    "txt_records": [],
+    "cname_records": [],
+    "ttl_avg": null
+  },
+  "rdap": {},
+  "metadata": {
+    "job_id": "3b2da851-95ea-48be-b848-c0aa82dda831",
+    "registered_domain": "facebook.com",
+    "scraped_at": "2026-09-28T14:30:09.188434+00:00",
+    "duration_ms": 17119.507789611816,
+    "is_partial": false
+  },
+  "ml_features": {
+    "url_length": 25,
+    "domain_length": 16,
+    "path_length": 1,
+    "num_subdomains": 0,
+    "num_dots": 2,
+    "domain_num_hyphens": 0,
+    "num_special_chars": 6,
+    "ip_address": "",
+    "url_entropy": 3.8332696895151077,
+    "is_idn": 0,
+    "typosquatting_score": "High",
+    "brand_word_present": 1,
+    "misleading_keyword_present": 0,
+    "brand_position": "subdomain",
+    "domain_age_days": NaN,
+    "HTTPS": true,
+    "Is_Tunneling": 0,
+    "ttl_avg": 3.0,
+    "ssim_score": 1.0,
+    "favicon_similarity_score": 1.0,
+    "asn_number": NaN,
+    "reverse_dns_entropy": 3.1556390622295662,
+    "domain_registration_date": null,
+    "domain_exists": false,
+    "hosting_country": null,
+    "name_servers": null,
+    "hosting_ip": null,
+    "registrant_country": null,
+    "registrant_organisation": null,
+    "hosting_isp": null,
+    "registrant_name": null
+  },
+  "ml_prediction": {
+    "prediction": "Phishing",
+    "confidence": 0.85,
+    "probabilities": {
+      "Legitimate": 0.5739790201187134,
+      "Phishing": 0.3042655885219574,
+      "Suspected": 0.12175538390874863
+    },
+    "risk_score": 0.85,
+    "reasoning": [
+      "Domain appears to be typosquatting a known brand - high risk",
+      "Brand name found in subdomain - common phishing tactic",
+      "Website appearance is very similar to known brand (SSIM: 1.00)",
+      "Favicon matches known brand (1.00) - could be impersonation",
+      "Low DNS TTL (3s) - may indicate temporary/malicious infrastructure"
+    ],
+    "top_features": []
+  }
+}

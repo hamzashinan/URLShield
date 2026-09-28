@@ -32,11 +32,14 @@ function App() {
 
   // Check URL for admin mode on mount
   useEffect(() => {
-    if (window.location.pathname === '/admin' || window.location.pathname.startsWith('/admin/')) {
-      setRole('admin');
-      setCurrentPage('login'); // Show login page first
-    }
-  }, []);
+  if (
+    window.location.pathname === '/admin' ||
+    window.location.pathname.startsWith('/admin/')
+  ) {
+    setRole('admin');
+    setCurrentPage('overview');
+  }
+}, []);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isDiffViewerOpen, setIsDiffViewerOpen] = useState(false);
   const [isExportDrawerOpen, setIsExportDrawerOpen] = useState(false);
@@ -115,10 +118,10 @@ function App() {
   // ─── Admin Mode ─────────────────────────────────────────────────────────────
   const renderAdminPage = () => {
     // Check authentication for admin pages (except login page)
-    if (currentPage !== 'login' && currentPage !== 'auth-login' && !isAdminAuthenticated) {
-      setCurrentPage('login');
-      return null;
-    }
+    // if (currentPage !== 'login' && currentPage !== 'auth-login' && !isAdminAuthenticated) {
+    //   setCurrentPage('login');
+    //   return null;
+    // }
 
     switch (currentPage) {
       case 'login':

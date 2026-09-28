@@ -1,5 +1,5 @@
 #!/bin/bash
-# YodhaC.Ai Installation Verification Script
+# URLShield Installation Verification Script
 
 set -e
 
@@ -65,10 +65,10 @@ check_dependencies() {
 check_env_file() {
     echo -n "Checking .env file... "
     if [ -f ".env" ]; then
-        if grep -q "YODHAC_API_KEY" .env; then
+        if grep -q "URLSHIELD_API_KEY" .env; then
             echo -e "${GREEN}✓${NC} .env file configured"
         else
-            echo -e "${YELLOW}⚠${NC} .env file missing YODHAC_API_KEY"
+            echo -e "${YELLOW}⚠${NC} .env file missing URLSHIELD_API_KEY"
         fi
     else
         echo -e "${YELLOW}⚠${NC} .env file not found (copy from .env.example)"
@@ -122,8 +122,8 @@ echo "=================================="
 echo ""
 echo "Next steps:"
 echo "1. If any checks failed, install missing dependencies"
-echo "2. Copy .env.example to .env and set YODHAC_API_KEY"
-echo "3. Run: python -m yodhac.main all"
+echo "2. Copy .env.example to .env and set URLSHIELD_API_KEY"
+echo "3. Run: python -m URLshield.main all"
 echo "4. Test: curl http://localhost:8080/health"
 echo ""
 echo "For detailed instructions, see README.md or QUICKSTART.md"

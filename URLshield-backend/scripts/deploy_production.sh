@@ -1,10 +1,10 @@
 #!/bin/bash
-# YodhaC.Ai Production Deployment Script
+# URLShield Production Deployment Script
 
 set -e
 
 echo "=================================="
-echo "YodhaC.Ai Production Deployment"
+echo "URLShield Production Deployment"
 echo "=================================="
 echo ""
 
@@ -28,36 +28,36 @@ if ! command -v docker &> /dev/null; then
 fi
 
 # Check if credentials file exists
-if [ ! -f ".yodhac_production.env" ]; then
-    echo -e "${YELLOW}Warning: .yodhac_production.env not found${NC}"
+if [ ! -f ".urlshield_production.env" ]; then
+    echo -e "${YELLOW}Warning: .urlshield_production.env not found${NC}"
     echo "Generating new API key..."
     
     API_KEY=$(python3 -c "import secrets; print(secrets.token_urlsafe(32))")
     
-    cat > .yodhac_production.env << EOF
-# YodhaC.Ai Production Credentials
+    cat > .urlshield_production.env << EOF
+# URLShield Production Credentials
 # KEEP THIS FILE SECURE - DO NOT COMMIT TO GIT
 
-YODHAC_API_KEY=${API_KEY}
-YODHAC_ALLOW_ORIGIN=*
-YODHAC_LOG_LEVEL=INFO
+URLSHIELD_API_KEY=${API_KEY}
+URLSHIELD_ALLOW_ORIGIN=*
+URLSHIELD_LOG_LEVEL=INFO
 
 # Generated: $(date +%Y-%m-%d)
 # Rotate every 90 days
 EOF
     
-    chmod 600 .yodhac_production.env
+    chmod 600 .urlshield_production.env
     echo -e "${GREEN}✓ Generated new API key${NC}"
     echo -e "${BLUE}API Key: ${API_KEY}${NC}"
     echo ""
 fi
 
 # Load credentials
-source .yodhac_production.env
+source .urlshield_production.env
 
 # Configuration
-CONTAINER_NAME="yodhac-production"
-IMAGE_NAME="yodhac:latest"
+CONTAINER_NAME="urlshield-production"
+IMAGE_NAME="urlshield:latest"
 DATA_DIR="$(pwd)/data"
 PORT="8080"
 MEMORY_LIMIT="2g"
@@ -96,9 +96,9 @@ docker run -d \
     --restart unless-stopped \
     -p ${PORT}:8080 \
     -v "${DATA_DIR}:/app/data" \
-    -e YODHAC_API_KEY="${YODHAC_API_KEY}" \
-    -e YODHAC_ALLOW_ORIGIN="${YODHAC_ALLOW_ORIGIN}" \
-    -e YODHAC_LOG_LEVEL="${YODHAC_LOG_LEVEL}" \
+    -e URLSHIELD_API_KEY="${URLSHIELD_API_KEY}" \
+    -e URLSHIELD_ALLOW_ORIGIN="${URLSHIELD_ALLOW_ORIGIN}" \
+    -e URLSHIELD_LOG_LEVEL="${URLSHIELD_LOG_LEVEL}" \
     --memory="${MEMORY_LIMIT}" \
     --cpus="${CPU_LIMIT}" \
     ${IMAGE_NAME}
@@ -112,7 +112,7 @@ sleep 5
 
 # Check health
 echo -e "${BLUE}Checking health...${NC}"
-HEALTH_CHECK=$(curl -s -H "X-API-Key: ${YODHAC_API_KEY}" http://localhost:${PORT}/health)
+HEALTH_CHECK=$(curl -s -H "X-API-Key: ${URLSHIELD_API_KEY}" http://localhost:${PORT}/health)
 
 if echo "${HEALTH_CHECK}" | grep -q '"ok":true'; then
     echo -e "${GREEN}✓ Service is healthy${NC}"
@@ -131,7 +131,7 @@ echo "=================================="
 echo ""
 echo "Service Information:"
 echo "  URL: http://localhost:${PORT}"
-echo "  API Key: ${YODHAC_API_KEY}"
+echo "  API Key: ${URLSHIELD_API_KEY}"
 echo "  Container: ${CONTAINER_NAME}"
 echo ""
 echo "Useful Commands:"
@@ -141,5 +141,5 @@ echo "  Restart: docker restart ${CONTAINER_NAME}"
 echo "  Status: docker ps -f name=${CONTAINER_NAME}"
 echo ""
 echo -e "${YELLOW}⚠ Keep your API key secure!${NC}"
-echo "  Stored in: .yodhac_production.env"
+echo "  Stored in: .urlshield_production.env"
 echo ""

@@ -1,0 +1,17 @@
+{
+  "id": "c4558e5b-dc3f-417b-a0a8-b022a2d4129d",
+  "state": "done",
+  "url": "https://example.com",
+  "brand_hint": null,
+  "legitimate_domain": null,
+  "root": "data\\example.com\\20260928T143059Z",
+  "feature_path": "data\\example.com\\20260928T143059Z\\features.json",
+  "error": null,
+  "created_at": "2026-09-28T14:30:58.582884Z",
+  "updated_at": "2026-09-28T14:31:07.981824Z",
+  "ml_features": null,
+  "ml_prediction": null,
+  "analysis_type": "url_only",
+  "is_partial": false,
+  "domain_details": null
+}

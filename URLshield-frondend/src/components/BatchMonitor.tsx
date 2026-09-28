@@ -143,8 +143,8 @@ export const BatchMonitor: React.FC<BatchMonitorProps> = ({ batchId, urls = [], 
                   country: job.domain_details?.hosting_country || 'Unknown',
                 }
               };
-              const existing = JSON.parse(localStorage.getItem('yodhac_alerts') || '[]');
-              localStorage.setItem('yodhac_alerts', JSON.stringify([alert, ...existing]));
+              const existing = JSON.parse(localStorage.getItem('urlshield_alerts') || '[]');
+              localStorage.setItem('urlshield_alerts', JSON.stringify([alert, ...existing]));
             }
           }
         } catch {
@@ -337,7 +337,7 @@ export const BatchMonitor: React.FC<BatchMonitorProps> = ({ batchId, urls = [], 
         </table>
 
         <div class="footer">
-          <span>YodhaC.Ai Security Report</span>
+          <span>URLShield Security Report</span>
           <span>${new Date().toISOString().split('T')[0]}</span>
         </div>
 
@@ -396,7 +396,7 @@ export const BatchMonitor: React.FC<BatchMonitorProps> = ({ batchId, urls = [], 
 
       if (suspiciousJobs.length > 0) {
         // Store alerts in localStorage for the Alerts page
-        const existingAlerts = JSON.parse(localStorage.getItem('yodhac_alerts') || '[]');
+        const existingAlerts = JSON.parse(localStorage.getItem('urlshield_alerts') || '[]');
         const newAlerts = suspiciousJobs.map(({ job, classification }) => ({
           id: `batch-${batchId}-${job.id}`,
           domain: job.url || job.root || 'Unknown',
@@ -409,7 +409,7 @@ export const BatchMonitor: React.FC<BatchMonitorProps> = ({ batchId, urls = [], 
           batchId: batchId,
           status: 'new'
         }));
-        localStorage.setItem('yodhac_alerts', JSON.stringify([...existingAlerts, ...newAlerts]));
+        localStorage.setItem('urlshield_alerts', JSON.stringify([...existingAlerts, ...newAlerts]));
       }
     } catch (err: any) {
       console.error('Failed to fetch job results:', err);

@@ -1,0 +1,17 @@
+{
+  "id": "588cf4db-a3f4-42ab-b26a-6a05e9f2f13d",
+  "state": "done",
+  "url": "https://www.microsoft.com",
+  "brand_hint": null,
+  "legitimate_domain": null,
+  "root": "data\\microsoft.com\\20260928T143059Z",
+  "feature_path": "data\\microsoft.com\\20260928T143059Z\\features.json",
+  "error": null,
+  "created_at": "2026-09-28T14:30:58.542946Z",
+  "updated_at": "2026-09-28T14:31:59.354685Z",
+  "ml_features": null,
+  "ml_prediction": null,
+  "analysis_type": "url_only",
+  "is_partial": false,
+  "domain_details": null
+}

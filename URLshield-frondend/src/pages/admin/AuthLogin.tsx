@@ -18,7 +18,7 @@ export const AuthLogin: React.FC<AuthLoginProps> = ({ onLoginSuccess, onBackToDa
     
     // Hardcoded admin credentials
     const ADMIN_USERNAME = 'admin';
-    const ADMIN_PASSWORD = 'yodha123';
+    const ADMIN_PASSWORD = 'urlshield123';
     
     // Validate credentials
     if (credentials.username === ADMIN_USERNAME && credentials.password === ADMIN_PASSWORD) {
@@ -58,7 +58,7 @@ export const AuthLogin: React.FC<AuthLoginProps> = ({ onLoginSuccess, onBackToDa
               </div>
             </div>
             <h1 className="text-2xl font-bold mb-2" style={{ color: '#60A5FA', textShadow: '0 0 20px rgba(59, 130, 246, 0.3)' }}>Admin Authentication</h1>
-            <p className="text-sm" style={{ color: '#94A3B8' }}>YodhaC.Ai Administrative Panel</p>
+            <p className="text-sm" style={{ color: '#94A3B8' }}>URLShield Administrative Panel</p>
           </div>
 
           {/* Login Form */}

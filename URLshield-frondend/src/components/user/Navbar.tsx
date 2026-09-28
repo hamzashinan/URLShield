@@ -13,6 +13,7 @@ const navLinks = [
   { id: 'scan-history', label: 'History' },
   { id: 'watchlist', label: 'Watchlist' },
   { id: 'alerts', label: 'Alerts' },
+  
 ];
 
 export const UserNavbar: React.FC<UserNavbarProps> = ({
@@ -52,6 +53,7 @@ export const UserNavbar: React.FC<UserNavbarProps> = ({
           <div className="hidden md:flex items-center gap-1">
             {navLinks.map((link) => {
               const isActive = currentPage === link.id;
+
               return (
                 <button
                   key={link.id}
@@ -66,6 +68,16 @@ export const UserNavbar: React.FC<UserNavbarProps> = ({
                 </button>
               );
             })}
+
+            {/* Admin */}
+            <button
+              onClick={() => {
+                window.location.href = '/admin';
+              }}
+              className="px-4 py-2 rounded-lg text-sm font-medium text-text-secondary hover:text-text hover:bg-surface transition-all duration-200"
+            >
+              Admin
+            </button>
           </div>
 
           {/* Right Actions */}
@@ -126,6 +138,16 @@ export const UserNavbar: React.FC<UserNavbarProps> = ({
                 </button>
               );
             })}
+            {/* Admin */}
+          <button
+            onClick={() => {
+              window.location.href = '/admin';
+              setMobileOpen(false);
+            }}
+            className="w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium text-text-secondary hover:bg-surface hover:text-text transition-all duration-200"
+          >
+            Admin
+          </button>
             <div className="border-t border-border pt-4 mt-4">
               <button
                 onClick={() => {
@@ -139,7 +161,7 @@ export const UserNavbar: React.FC<UserNavbarProps> = ({
                 }`}
               >
                 <User size={18} />
-                Sign In to YodhaC
+                Sign In 
               </button>
             </div>
           </div>

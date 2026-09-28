@@ -78,44 +78,57 @@ URLShield/
 - Windows PowerShell or bash shell
 - Optional: Playwright browser dependencies for scraping screenshots
 
-## Running the Project
+## Install Python Dependencies
 
-### 1) Backend
-
-Open PowerShell in the project root and run:
+From the project root, install the backend packages into the project virtual environment:
 
 ```powershell
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m playwright install chromium
+```
+
+## Running the Project
+
+Use these exact PowerShell commands from the project root. They match the way this workspace is configured and were validated in this environment.
+
+### 1) Activate the project Python environment and start the backend
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned
+& .\.venv\Scripts\Activate.ps1
 cd URLshield-backend
 $env:PYTHONPATH = "$PWD"
 python -m URLshield.main
 ```
 
-If the project is using the local backend venv specifically:
-
-```powershell
-cd URLshield-backend
-$env:PYTHONPATH = "$PWD"
-.\venv\Scripts\python.exe -m URLshield.main
-```
-
-The backend listens on:
+This starts the FastAPI backend plus worker on:
 
 - `http://localhost:8080`
 - API key default: `dev-secret-key`
 
-### 2) Frontend
-
-In a second terminal:
+### 2) Start the frontend in a second terminal
 
 ```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned
+& .\.venv\Scripts\Activate.ps1
 cd URLshield-frondend
 npm install
 npm run dev -- --host 0.0.0.0
 ```
 
-The frontend is usually served at:
+The frontend serves on:
 
 - `http://localhost:5173`
+
+### 3) One-line root-level startup summary
+
+```powershell
+# Terminal 1: backend
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned; & .\.venv\Scripts\Activate.ps1; cd URLshield-backend; $env:PYTHONPATH = "$PWD"; python -m URLshield.main
+
+# Terminal 2: frontend
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned; & .\.venv\Scripts\Activate.ps1; cd URLshield-frondend; npm install; npm run dev -- --host 0.0.0.0
+```
 
 ## Health Check
 

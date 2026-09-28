@@ -1,0 +1,39 @@
+{
+  "input_url": "https://www.openstreetmap.org",
+  "final_url": "https://www.openstreetmap.org/#map=5/21.84/82.79",
+  "signals": {
+    "status_code": 200,
+    "text_length": 0,
+    "form_count": 0,
+    "password_fields": 0,
+    "email_mentions": 0,
+    "outlink_count": 0
+  },
+  "dns": {
+    "a_records": [
+      "151.101.193.55",
+      "151.101.1.55",
+      "151.101.65.55",
+      "151.101.129.55"
+    ],
+    "aaaa_records": [],
+    "mx_records": [
+      "a.mx.openstreetmap.org."
+    ],
+    "ns_records": [
+      "rajeev.ns.cloudflare.com.",
+      "daisy.ns.cloudflare.com."
+    ],
+    "txt_records": [],
+    "cname_records": [],
+    "ttl_avg": null
+  },
+  "rdap": {},
+  "metadata": {
+    "job_id": "d5459268-2705-4b7a-9510-b79ff911af44",
+    "registered_domain": "openstreetmap.org",
+    "scraped_at": "2026-09-28T14:31:54.354979+00:00",
+    "duration_ms": 55288.43569755554,
+    "is_partial": false
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "input_url": "https://www.mozilla.org",
+  "final_url": "https://www.mozilla.org/",
+  "signals": {
+    "status_code": 200,
+    "text_length": 0,
+    "form_count": 0,
+    "password_fields": 0,
+    "email_mentions": 0,
+    "outlink_count": 0
+  },
+  "dns": {
+    "a_records": [
+      "35.190.14.201"
+    ],
+    "aaaa_records": [],
+    "mx_records": [
+      "aspmx3.googlemail.com.",
+      "alt2.aspmx.l.google.com.",
+      "aspmx.l.google.com.",
+      "alt1.aspmx.l.google.com."
+    ],
+    "ns_records": [
+      "ns1-240.akam.net.",
+      "ns7-66.akam.net.",
+      "ns5-65.akam.net.",
+      "ns4-64.akam.net."
+    ],
+    "txt_records": [],
+    "cname_records": [],
+    "ttl_avg": null
+  },
+  "rdap": {},
+  "metadata": {
+    "job_id": "3a19ea55-7e49-4fe3-97bb-2e3c89186523",
+    "registered_domain": "mozilla.org",
+    "scraped_at": "2026-09-28T14:31:48.984484+00:00",
+    "duration_ms": 49959.689140319824,
+    "is_partial": false
+  }
+}

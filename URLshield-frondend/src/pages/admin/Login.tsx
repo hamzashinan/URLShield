@@ -17,7 +17,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
     
     // Hardcoded admin credentials
     const ADMIN_USERNAME = 'admin';
-    const ADMIN_PASSWORD = 'yodha123';
+    const ADMIN_PASSWORD = 'urlshield123';
     
     // Validate credentials
     if (credentials.username === ADMIN_USERNAME && credentials.password === ADMIN_PASSWORD) {
@@ -49,7 +49,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
               </div>
             </div>
             <h1 className="text-2xl font-bold text-text mb-2">Admin Access</h1>
-            <p className="text-text-secondary">YodhaC.Ai Administrative Panel</p>
+            <p className="text-text-secondary">URLShield Administrative Panel</p>
           </div>
 
           {/* Login Form */}

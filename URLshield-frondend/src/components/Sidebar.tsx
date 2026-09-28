@@ -9,11 +9,6 @@ import {
   Search,
   History,
   BarChart3,
-  Users,
-  Key,
-  Server,
-  Database,
-  Bell,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -43,13 +38,6 @@ const adminMenu: MenuItem[] = [
   { id: 'overview', label: 'Dashboard', icon: LayoutDashboard, sectionLabel: 'Core' },
   { id: 'domains', label: 'Domains', icon: Globe },
   { id: 'training', label: 'Model Training', icon: BarChart3 },
-  // Management
-  { id: 'users', label: 'Users', icon: Users, dividerBefore: true, sectionLabel: 'Management' },
-  // Operations
-  { id: 'monitoring', label: 'Monitoring', icon: Server, dividerBefore: true, sectionLabel: 'Operations' },
-  { id: 'alert-rules', label: 'Alert Rules', icon: Bell },
-  { id: 'api-management', label: 'API Management', icon: Key },
-  { id: 'data-management', label: 'Data Management', icon: Database },
   // System
   { id: 'settings', label: 'Settings', icon: Settings, dividerBefore: true, sectionLabel: 'System' },
 ];

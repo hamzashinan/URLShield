@@ -5,7 +5,7 @@ export interface UserIssue {
   status: 'open' | 'resolved' | 'in-progress';
 }
 
-const STORAGE_KEY = 'yodhac_user_issues';
+const STORAGE_KEY = 'urlshield_user_issues';
 
 export function getIssues(): UserIssue[] {
   try {

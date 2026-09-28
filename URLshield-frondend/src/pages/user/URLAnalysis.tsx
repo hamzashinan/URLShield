@@ -500,7 +500,7 @@ export const URLAnalysis: React.FC<URLAnalysisProps> = () => {
                     </div>
                     ` : ''}
                     <div class="footer">
-                      <span>YodhaC.Ai Security Report</span>
+                      <span>URLShield Security Report</span>
                       <span>${new Date().toISOString().split('T')[0]}</span>
                     </div>
                     <script>window.onload = () => { setTimeout(() => window.print(), 500); };</script>

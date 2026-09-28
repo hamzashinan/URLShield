@@ -1,0 +1,38 @@
+{
+  "input_url": "https://www.wikipedia.org",
+  "final_url": "https://www.wikipedia.org/",
+  "signals": {
+    "status_code": 200,
+    "text_length": 0,
+    "form_count": 0,
+    "password_fields": 0,
+    "email_mentions": 0,
+    "outlink_count": 0
+  },
+  "dns": {
+    "a_records": [
+      "103.102.166.224"
+    ],
+    "aaaa_records": [],
+    "mx_records": [
+      "mx-in2001.wikimedia.org.",
+      "mx-in1001.wikimedia.org."
+    ],
+    "ns_records": [
+      "ns2.wikimedia.org.",
+      "ns0.wikimedia.org.",
+      "ns1.wikimedia.org."
+    ],
+    "txt_records": [],
+    "cname_records": [],
+    "ttl_avg": null
+  },
+  "rdap": {},
+  "metadata": {
+    "job_id": "e552a351-b4f4-4350-8c24-3576e3b64028",
+    "registered_domain": "wikipedia.org",
+    "scraped_at": "2026-09-28T14:31:11.330584+00:00",
+    "duration_ms": 12251.74069404602,
+    "is_partial": false
+  }
+}

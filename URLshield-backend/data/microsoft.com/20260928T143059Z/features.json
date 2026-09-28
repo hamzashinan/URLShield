@@ -1,0 +1,38 @@
+{
+  "input_url": "https://www.microsoft.com",
+  "final_url": "https://www.microsoft.com/en-in",
+  "signals": {
+    "status_code": 200,
+    "text_length": 0,
+    "form_count": 0,
+    "password_fields": 0,
+    "email_mentions": 0,
+    "outlink_count": 0
+  },
+  "dns": {
+    "a_records": [
+      "150.171.109.131"
+    ],
+    "aaaa_records": [],
+    "mx_records": [
+      "microsoft-com.mail.protection.outlook.com."
+    ],
+    "ns_records": [
+      "ns1-39.azure-dns.com.",
+      "ns2-39.azure-dns.net.",
+      "ns3-39.azure-dns.org.",
+      "ns4-39.azure-dns.info."
+    ],
+    "txt_records": [],
+    "cname_records": [],
+    "ttl_avg": null
+  },
+  "rdap": {},
+  "metadata": {
+    "job_id": "588cf4db-a3f4-42ab-b26a-6a05e9f2f13d",
+    "registered_domain": "microsoft.com",
+    "scraped_at": "2026-09-28T14:31:59.193667+00:00",
+    "duration_ms": 60159.48700904846,
+    "is_partial": false
+  }
+}

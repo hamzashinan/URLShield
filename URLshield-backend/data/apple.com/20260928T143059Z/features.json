@@ -1,0 +1,43 @@
+{
+  "input_url": "https://www.apple.com",
+  "final_url": "https://www.apple.com/",
+  "signals": {
+    "status_code": 200,
+    "text_length": 0,
+    "form_count": 0,
+    "password_fields": 0,
+    "email_mentions": 0,
+    "outlink_count": 0
+  },
+  "dns": {
+    "a_records": [
+      "17.253.144.10"
+    ],
+    "aaaa_records": [],
+    "mx_records": [
+      "mx-in-sg.apple.com.",
+      "mx-in-hfd.apple.com.",
+      "mx-in-vib.apple.com.",
+      "mx-in.g.apple.com.",
+      "mx-in-ma.apple.com.",
+      "mx-in-rn.apple.com."
+    ],
+    "ns_records": [
+      "a.ns.apple.com.",
+      "b.ns.apple.com.",
+      "c.ns.apple.com.",
+      "d.ns.apple.com."
+    ],
+    "txt_records": [],
+    "cname_records": [],
+    "ttl_avg": null
+  },
+  "rdap": {},
+  "metadata": {
+    "job_id": "020ce298-978d-44c8-8cb0-ead24e939512",
+    "registered_domain": "apple.com",
+    "scraped_at": "2026-09-28T14:31:56.547127+00:00",
+    "duration_ms": 57545.08876800537,
+    "is_partial": false
+  }
+}

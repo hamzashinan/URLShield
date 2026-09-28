@@ -1,0 +1,38 @@
+{
+  "input_url": "https://fastapi.tiangolo.com",
+  "final_url": "https://fastapi.tiangolo.com/",
+  "signals": {
+    "status_code": 200,
+    "text_length": 0,
+    "form_count": 0,
+    "password_fields": 0,
+    "email_mentions": 0,
+    "outlink_count": 0
+  },
+  "dns": {
+    "a_records": [
+      "172.67.146.166",
+      "104.21.57.149"
+    ],
+    "aaaa_records": [],
+    "mx_records": [
+      "mx1.forwardemail.net.",
+      "mx2.forwardemail.net."
+    ],
+    "ns_records": [
+      "adrian.ns.cloudflare.com.",
+      "alec.ns.cloudflare.com."
+    ],
+    "txt_records": [],
+    "cname_records": [],
+    "ttl_avg": null
+  },
+  "rdap": {},
+  "metadata": {
+    "job_id": "818f0af6-0512-459c-817a-73df7457c090",
+    "registered_domain": "tiangolo.com",
+    "scraped_at": "2026-09-28T14:32:13.022584+00:00",
+    "duration_ms": 73984.41195487976,
+    "is_partial": false
+  }
+}

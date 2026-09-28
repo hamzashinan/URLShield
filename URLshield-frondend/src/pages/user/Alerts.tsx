@@ -7,7 +7,7 @@ import { ScorePill } from '../../components/ScorePill';
 import { Badge } from '../../components/Badge';
 import { Button } from '../../components/Button';
 import type { ScanHistoryResponse } from '../../types/api';
-import { YodhaCAPIClient } from '../../lib/api';
+import { URLShieldAPIClient } from '../../lib/api';
 
 interface Alert {
   id: string;
@@ -23,7 +23,7 @@ interface Alert {
   risk_score?: number;
 }
 
-const apiClient = new YodhaCAPIClient();
+const apiClient = new URLShieldAPIClient();
 
 // Helper function to safely format timestamps
 const formatTimestamp = (timestamp: string | undefined | null): string => {
@@ -164,7 +164,7 @@ export const Alerts: React.FC<AlertsProps> = ({ onNavigateToEvidence }) => {
       // Filter out locally deleted alerts
       let deletedAlerts: string[] = [];
       try {
-        deletedAlerts = JSON.parse(localStorage.getItem('yodha_alerts_deleted_items') || '[]');
+        deletedAlerts = JSON.parse(localStorage.getItem('urlshield_alerts_deleted_items') || '[]');
       } catch (e) {}
 
       if (deletedAlerts.length > 0) {
@@ -273,7 +273,7 @@ export const Alerts: React.FC<AlertsProps> = ({ onNavigateToEvidence }) => {
       // Store deleted items in localStorage instead of calling backend API
       let deletedItems: string[] = [];
       try {
-        deletedItems = JSON.parse(localStorage.getItem('yodha_alerts_deleted_items') || '[]');
+        deletedItems = JSON.parse(localStorage.getItem('urlshield_alerts_deleted_items') || '[]');
       } catch (e) {}
 
       selectedAlertsData.forEach((alert) => {
@@ -283,7 +283,7 @@ export const Alerts: React.FC<AlertsProps> = ({ onNavigateToEvidence }) => {
         }
       });
       
-      localStorage.setItem('yodha_alerts_deleted_items', JSON.stringify(deletedItems));
+      localStorage.setItem('urlshield_alerts_deleted_items', JSON.stringify(deletedItems));
 
       // Remove deleted alerts from state and clear selection
       console.log('Removing deleted alerts from state locally...');
@@ -343,7 +343,7 @@ export const Alerts: React.FC<AlertsProps> = ({ onNavigateToEvidence }) => {
     // Add title
     doc.setFontSize(20);
     doc.setFont('helvetica', 'bold');
-    doc.text('YODHA PHISHING ALERTS REPORT', pageWidth / 2, yPosition, { align: 'center' });
+    doc.text('URLSHIELD PHISHING ALERTS REPORT', pageWidth / 2, yPosition, { align: 'center' });
     yPosition += 15;
 
     // Add generation timestamp
@@ -434,7 +434,7 @@ export const Alerts: React.FC<AlertsProps> = ({ onNavigateToEvidence }) => {
     });
 
     // Save the PDF
-    doc.save(`yodha-alerts-export-${new Date().toISOString().split('T')[0]}.pdf`);
+    doc.save(`urlshield-alerts-export-${new Date().toISOString().split('T')[0]}.pdf`);
   };
 
   return (

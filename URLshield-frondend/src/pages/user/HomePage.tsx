@@ -493,7 +493,7 @@ export const HomePage: React.FC = () => {
         ` : ''}
 
         <div class="footer">
-          <span>YodhaC.Ai Security Report</span>
+          <span>URLShield Security Report</span>
           <span>${new Date().toISOString().split('T')[0]}</span>
         </div>
 

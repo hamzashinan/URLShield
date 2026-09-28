@@ -78,12 +78,12 @@ export const ScanHistory: React.FC = () => {
       });
       
       // Filter out locally hidden/deleted items
-      const clearedAtStr = localStorage.getItem('yodha_history_cleared_at');
+      const clearedAtStr = localStorage.getItem('urlshield_history_cleared_at');
       const clearedAt = clearedAtStr ? new Date(clearedAtStr).getTime() : 0;
       
       let deletedItems: string[] = [];
       try {
-        deletedItems = JSON.parse(localStorage.getItem('yodha_history_deleted_items') || '[]');
+        deletedItems = JSON.parse(localStorage.getItem('urlshield_history_deleted_items') || '[]');
       } catch (e) {}
       
       const visibleItems = response.items.filter(scan => {
@@ -119,13 +119,13 @@ export const ScanHistory: React.FC = () => {
       // This ensures it's removed from History but remains in Alerts
       let deletedItems: string[] = [];
       try {
-        deletedItems = JSON.parse(localStorage.getItem('yodha_history_deleted_items') || '[]');
+        deletedItems = JSON.parse(localStorage.getItem('urlshield_history_deleted_items') || '[]');
       } catch (e) {}
       
       const itemKey = `${scan.domain}|${scan.timestamp}`;
       if (!deletedItems.includes(itemKey)) {
         deletedItems.push(itemKey);
-        localStorage.setItem('yodha_history_deleted_items', JSON.stringify(deletedItems));
+        localStorage.setItem('urlshield_history_deleted_items', JSON.stringify(deletedItems));
       }
       
       // Update local state instantly
@@ -151,9 +151,9 @@ export const ScanHistory: React.FC = () => {
       // This prevents clock skew issues where a newly analyzed URL might be hidden
       // because the client's clock is ahead of the server's clock.
       if (scans.length > 0) {
-        localStorage.setItem('yodha_history_cleared_at', scans[0].scan_time);
+        localStorage.setItem('urlshield_history_cleared_at', scans[0].scan_time);
       } else {
-        localStorage.setItem('yodha_history_cleared_at', new Date().toISOString());
+        localStorage.setItem('urlshield_history_cleared_at', new Date().toISOString());
       }
       
       // Update local state instantly

@@ -8,8 +8,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from yodhac.config import get_settings
-from yodhac.scraper import Scraper
+from URLshield.config import get_settings
+from URLshield.scraper import Scraper
 
 
 async def backfill(data_root: Path, domain: str | None = None) -> None:

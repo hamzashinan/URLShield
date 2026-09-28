@@ -1,0 +1,17 @@
+{
+  "id": "8501141b-90f6-4433-8bb4-c55a48cc746f",
+  "state": "done",
+  "url": "https://www.djangoproject.com",
+  "brand_hint": null,
+  "legitimate_domain": null,
+  "root": "data\\djangoproject.com\\20260928T143059Z",
+  "feature_path": "data\\djangoproject.com\\20260928T143059Z\\features.json",
+  "error": null,
+  "created_at": "2026-09-28T14:30:58.553045Z",
+  "updated_at": "2026-09-28T14:31:48.301486Z",
+  "ml_features": null,
+  "ml_prediction": null,
+  "analysis_type": "url_only",
+  "is_partial": false,
+  "domain_details": null
+}

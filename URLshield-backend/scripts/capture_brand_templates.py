@@ -180,7 +180,7 @@ def main():
     print("""
 ╔══════════════════════════════════════════════════════════╗
 ║     Brand Template Screenshot Capture Tool              ║
-║     YodhaC.Ai Phishing Detection System                 ║
+║     URLShield Phishing Detection System                 ║
 ╚══════════════════════════════════════════════════════════╝
     """)
     

@@ -29,7 +29,7 @@ export const AuthPage: React.FC = () => {
                 </div>
               </div>
             </div>
-            <h1 className="text-3xl font-bold text-text mb-2">Welcome to YodhaC</h1>
+            <h1 className="text-3xl font-bold text-text mb-2">Welcome to URLShield</h1>
             <p className="text-sm text-text-secondary">AI-Powered Phishing Intelligence</p>
           </div>
 
@@ -68,7 +68,7 @@ export const AuthPage: React.FC = () => {
               <p className="text-sm text-text-secondary">
                 {activeTab === 'login' 
                   ? 'Sign in with your Google account to access your analysis history.' 
-                  : 'Join YodhaC to protect yourself from phishing threats.'}
+                  : 'Join URLShield to protect yourself from phishing threats.'}
               </p>
             </div>
 
