@@ -37,7 +37,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
   onCaptureModalClose,
 }) => {
   return (
-    <div className="min-h-screen bg-bg">
+    <div className="app-background min-h-screen">
       <Header
         role="admin"
         onRoleChange={onRoleChange}

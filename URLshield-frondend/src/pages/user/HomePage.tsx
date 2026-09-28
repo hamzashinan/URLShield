@@ -22,7 +22,6 @@ import { DomainDetailsCard } from '../../components/DomainDetailsCard';
 import { BatchUpload } from '../../components/BatchUpload';
 import { BatchMonitor } from '../../components/BatchMonitor';
 import { Button } from '../../components/Button';
-import { CyberUrlGlobe } from '../../components/CyberUrlGlobe';
 import { CustomSelect } from '../../components/CustomSelect';
 import { classifySecurityRisk } from '../../lib/classification';
 import { apiClient } from '../../lib/api';
@@ -511,16 +510,8 @@ export const HomePage: React.FC = () => {
   // ─── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen relative">
-      {/* ═══ GLOBAL BACKGROUND ANIMATION ═══ */}
-      <CyberUrlGlobe />
-
       {/* ═══ HERO SECTION ═══ */}
       <section id="url-analysis" className="relative z-10">
-        {/* Background Elements */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-blue-500/5"></div>
-        <div className="absolute top-0 left-0 w-96 h-96 bg-primary/10 rounded-full blur-3xl opacity-20"></div>
-        <div className="absolute bottom-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl opacity-20"></div>
-
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-12">
           {/* Hero Content */}
           <div className="max-w-4xl mx-auto mb-8 animate-fade-in-up relative z-10">
