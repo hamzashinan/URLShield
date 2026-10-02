@@ -1,3 +1,8 @@
+# Environment variables
+.env
+.env.*
+!.env.example
+
 # Python virtual environments
 .venv/
 venv/
@@ -5,3 +10,6 @@ URLshield-backend/venv/
 
 # Frontend dependencies
 node_modules/
+
+# URLShield runtime data
+URLshield-backend/data/

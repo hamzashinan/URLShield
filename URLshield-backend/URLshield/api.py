@@ -21,6 +21,8 @@ from sse_starlette.sse import EventSourceResponse
 from pydantic import BaseModel
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 
+from URLshield.database import SessionLocal
+from URLshield.db_models import ScanJob
 from URLshield import __version__
 from URLshield.config import Settings, get_settings
 from URLshield.worker import run_worker
@@ -354,22 +356,46 @@ async def scrape_urls(
     request: ScrapeRequest,
     queue: JobQueue = Depends(get_queue)
 ):
-    """Submit URLs for scraping"""
+    """Submit URLs for scraping and persist jobs in MySQL."""
     urls = request.get_urls()
-    
+
     if not urls:
         raise HTTPException(status_code=400, detail="No URLs provided")
-    
+
     job_ids = []
-    for url in urls:
-        job_id = queue.create_job(
-            url,
-            brand_hint=request.brand,
-            legitimate_domain=request.legitimate_domain,
-            analysis_mode=request.analysis_type or request.analysis_mode,
-        )
-        job_ids.append(job_id)
-    
+    db = SessionLocal()
+
+    try:
+        for url in urls:
+            # Existing filesystem queue
+            job_id = queue.create_job(
+                url,
+                brand_hint=request.brand,
+                legitimate_domain=request.legitimate_domain,
+                analysis_mode=request.analysis_type or request.analysis_mode,
+            )
+
+            # MySQL persistence
+            db_job = ScanJob(
+                id=job_id,
+                url=url,
+                state="queued",
+                brand_hint=request.brand,
+                legitimate_domain=request.legitimate_domain,
+            )
+
+            db.add(db_job)
+            job_ids.append(job_id)
+
+        db.commit()
+
+    except Exception:
+        db.rollback()
+        raise
+
+    finally:
+        db.close()
+
     logger.info(
         "scrape_requested",
         url_count=len(urls),
@@ -377,7 +403,7 @@ async def scrape_urls(
         brand_hint=request.brand,
         legitimate_domain=request.legitimate_domain,
     )
-    
+
     return ScrapeResponse(job_ids=job_ids)
 
 

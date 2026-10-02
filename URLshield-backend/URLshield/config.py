@@ -63,6 +63,11 @@ class Settings(BaseSettings):
         alias="URLSHIELD_API_PORT"
     )
 
+    database_url: str = Field(
+    default="mysql+pymysql://root:YOUR_PASSWORD@localhost:3306/urlshield",
+    alias="URLSHIELD_DATABASE_URL"
+    )
+
     # Worker
     worker_concurrency: int = 24
     queue_check_interval_ms: int = 1000
