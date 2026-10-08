@@ -8,6 +8,10 @@
 venv/
 URLshield-backend/venv/
 
+# Python caches
+__pycache__/
+*.py[cod]
+
 # Frontend dependencies
 node_modules/
 

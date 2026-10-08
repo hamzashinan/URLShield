@@ -19,6 +19,7 @@ PyYAML
 requests
 scikit-learn
 sse-starlette
+SQLAlchemy
 structlog
 tldextract
 tqdm
