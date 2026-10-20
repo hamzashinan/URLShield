@@ -204,7 +204,12 @@ export const ScanHistory: React.FC = () => {
     // Load screenshot as blob if it exists
     if (scan.has_screenshot) {
       try {
-        const screenshotUrl = apiClient.getEvidenceUrl(scan.domain, scan.timestamp, 'screenshot.png');
+        const screenshotUrl = apiClient.getEvidenceUrl(
+          scan.domain,
+          scan.timestamp,
+          'screenshot.png',
+          scan.job_id
+        );
         
         const response = await fetch(screenshotUrl);
         
@@ -256,12 +261,22 @@ export const ScanHistory: React.FC = () => {
   };
 
   const getScreenshotUrl = (scan: ScanHistoryItem) => {
-    return apiClient.getEvidenceUrl(scan.domain, scan.timestamp, 'screenshot.png');
+    return apiClient.getEvidenceUrl(
+      scan.domain,
+      scan.timestamp,
+      'screenshot.png',
+      scan.job_id
+    );
   };
 
   
   const getFeaturesUrl = (scan: ScanHistoryItem) => {
-    return apiClient.getEvidenceUrl(scan.domain, scan.timestamp, 'features.json');
+    return apiClient.getEvidenceUrl(
+      scan.domain,
+      scan.timestamp,
+      'features.json',
+      scan.job_id
+    );
   };
 
   const getRiskIndicators = (scan: ScanHistoryItem) => {

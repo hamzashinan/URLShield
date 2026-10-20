@@ -1164,10 +1164,14 @@ async def list_domains(
 async def get_screenshot(
     domain: str,
     timestamp: str,
-    settings: Settings = Depends(get_settings)
+    settings: Settings = Depends(get_settings),
+    job_id: Optional[str] = Query(None),
 ):
     """Get screenshot artifact"""
-    file_path = settings.data_root / domain / timestamp / "screenshot.png"
+    evidence_dir = settings.data_root / domain / timestamp
+    if job_id and (evidence_dir / job_id).is_dir():
+        evidence_dir = evidence_dir / job_id
+    file_path = evidence_dir / "screenshot.png"
     
     if not file_path.exists():
         raise HTTPException(status_code=404, detail="Screenshot not found")
@@ -1183,9 +1187,12 @@ async def capture_evidence_screenshot(
     domain: str,
     timestamp: str,
     settings: Settings = Depends(get_settings),
+    job_id: Optional[str] = Query(None),
 ):
     """Capture or regenerate screenshot.png for an existing evidence pack."""
     output_dir = settings.data_root / domain / timestamp
+    if job_id and (output_dir / job_id).is_dir():
+        output_dir = output_dir / job_id
 
     if not output_dir.is_dir():
         raise HTTPException(status_code=404, detail="Evidence pack not found")
@@ -1297,18 +1304,17 @@ async def get_evidence(
     domain: str,
     timestamp: str,
     artifact: str,
-    settings: Settings = Depends(get_settings)
+    settings: Settings = Depends(get_settings),
+    job_id: Optional[str] = Query(None),
 ):
     """
     Serve evidence files
     """
 
-    evidence_path = (
-        settings.data_root
-        / domain
-        / timestamp
-        / artifact
-    )
+    evidence_dir = settings.data_root / domain / timestamp
+    if job_id and (evidence_dir / job_id).is_dir():
+        evidence_dir = evidence_dir / job_id
+    evidence_path = evidence_dir / artifact
 
     print("Looking for evidence:", evidence_path)
 

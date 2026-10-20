@@ -260,16 +260,24 @@ class URLShieldAPIClient {
   }
 
   // Get evidence artifact URL (for images, HTML, JSON)
-  getEvidenceUrl(domain: string, timestamp: string, artifact: string): string {
-    return `${this.baseURL}/evidence/${encodeURIComponent(domain)}/${encodeURIComponent(timestamp)}/${encodeURIComponent(artifact)}`;
+  getEvidenceUrl(
+    domain: string,
+    timestamp: string,
+    artifact: string,
+    jobId?: string | null
+  ): string {
+    const url = `${this.baseURL}/evidence/${encodeURIComponent(domain)}/${encodeURIComponent(timestamp)}/${encodeURIComponent(artifact)}`;
+    return jobId ? `${url}?job_id=${encodeURIComponent(jobId)}` : url;
   }
 
   async captureEvidenceScreenshot(
     domain: string,
-    timestamp: string
+    timestamp: string,
+    jobId?: string
   ): Promise<{ success: boolean; has_screenshot: boolean; size: number }> {
+    const query = jobId ? `?job_id=${encodeURIComponent(jobId)}` : '';
     return this.request(
-      `/evidence/${encodeURIComponent(domain)}/${encodeURIComponent(timestamp)}/screenshot/capture`,
+      `/evidence/${encodeURIComponent(domain)}/${encodeURIComponent(timestamp)}/screenshot/capture${query}`,
       { method: 'POST' }
     );
   }

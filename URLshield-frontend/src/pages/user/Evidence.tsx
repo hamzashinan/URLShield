@@ -13,6 +13,7 @@ interface EvidenceItem {
   thumbnail: string;
   size: string;
   timestamp: string;
+  jobId?: string | null;
   hasScreenshot?: boolean;
   isPartial?: boolean;
   url?: string;
@@ -75,6 +76,7 @@ export const Evidence: React.FC = () => {
             thumbnail: 'screenshot',
             size: formatFileSize(scan.file_sizes?.screenshot || 0),
             timestamp: scan.timestamp,
+            jobId: scan.job_id,
             hasScreenshot: true,
             isPartial: scan.is_partial,
             url: scan.url,
@@ -102,7 +104,8 @@ export const Evidence: React.FC = () => {
       const url = apiClient.getEvidenceUrl(
         evidence.domain,
         evidence.timestamp,
-        artifact
+        artifact,
+        evidence.jobId
       );
 
       const response = await fetch(url);
@@ -330,7 +333,8 @@ export const Evidence: React.FC = () => {
                         src={apiClient.getEvidenceUrl(
                           evidence.domain,
                           evidence.timestamp,
-                          "screenshot.png"
+                          "screenshot.png",
+                          evidence.jobId
                         )}
                         alt="Screenshot"
                         className="w-full h-full object-cover"
