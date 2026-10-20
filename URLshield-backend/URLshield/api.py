@@ -20,9 +20,10 @@ from fastapi.responses import FileResponse, StreamingResponse, JSONResponse
 from sse_starlette.sse import EventSourceResponse
 from pydantic import BaseModel
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+from sqlalchemy.orm import Session
 
-from URLshield.database import SessionLocal
-from URLshield.db_models import ScanJob
+from URLshield.database import SessionLocal, get_db
+from URLshield.db_models import ScanJob, User as DBUser
 from URLshield import __version__
 from URLshield.config import Settings, get_settings
 from URLshield.worker import run_worker
@@ -72,6 +73,7 @@ from URLshield.models import (
     WatchlistMetricsResponse,
 )
 from URLshield.queue import JobQueue
+from URLshield.auth import router as auth_router, get_current_user
 from URLshield import xgboost_training as XGBoost
 
 logger = get_logger(__name__)
@@ -272,6 +274,7 @@ app = FastAPI(
     description="AI-Powered Phishing URL Detection and Intelligence Platform",
     version=__version__
 )
+app.include_router(auth_router)
 
 
 # =============================================================================
@@ -354,7 +357,8 @@ async def model_status():
 @app.post("/scrape", response_model=ScrapeResponse, dependencies=[Depends(verify_api_key)])
 async def scrape_urls(
     request: ScrapeRequest,
-    queue: JobQueue = Depends(get_queue)
+    queue: JobQueue = Depends(get_queue),
+    current_user: DBUser = Depends(get_current_user),
 ):
     """Submit URLs for scraping and persist jobs in MySQL."""
     urls = request.get_urls()
@@ -378,6 +382,7 @@ async def scrape_urls(
             # MySQL persistence
             db_job = ScanJob(
                 id=job_id,
+                user_id=current_user.id,
                 url=url,
                 state="queued",
                 brand_hint=request.brand,
@@ -818,11 +823,15 @@ async def get_watchlist_metrics(
     data_root = settings.data_root
     if data_root.exists():
         for domain_dir in data_root.iterdir():
-            if not domain_dir.is_dir() or domain_dir.name.startswith('.'):
+            if (
+                not domain_dir.is_dir()
+                or domain_dir.is_symlink()
+                or domain_dir.name.startswith('.')
+            ):
                 continue
             
             for timestamp_dir in domain_dir.iterdir():
-                if not timestamp_dir.is_dir():
+                if not timestamp_dir.is_dir() or timestamp_dir.is_symlink():
                     continue
                 
                 # Check if this is a recent scan (within 24 hours)
@@ -1386,126 +1395,160 @@ async def event_stream(
 # Scan History Endpoints
 # ============================================================================
 
-@app.get("/scan-history", response_model=ScanHistoryResponse, dependencies=[Depends(verify_api_key)])
+@app.get(
+    "/scan-history",
+    response_model=ScanHistoryResponse,
+    dependencies=[Depends(verify_api_key)],
+)
 async def get_scan_history(
     domain: Optional[str] = Query(None),
     limit: int = Query(100, ge=1, le=1000),
     offset: int = Query(0, ge=0),
-    settings: Settings = Depends(get_settings)
+    settings: Settings = Depends(get_settings),
+    current_user: DBUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
-    """Get scan history from data directory"""
+    """Get scan history belonging to the authenticated user."""
     data_root = settings.data_root
     
     if not data_root.exists():
         return ScanHistoryResponse(items=[], total=0)
     
+    owned_job_ids = {
+        job_id
+        for (job_id,) in db.query(ScanJob.id)
+        .filter(ScanJob.user_id == current_user.id)
+        .all()
+    }
+    if not owned_job_ids:
+        return ScanHistoryResponse(items=[], total=0)
+
     scan_items = []
-    
-    # Iterate through domain directories
+
     for domain_dir in data_root.iterdir():
         if not domain_dir.is_dir() or domain_dir.name.startswith('.'):
             continue
-        
+
         domain_name = domain_dir.name
-        
-        # Filter by domain if specified
         if domain and domain.lower() not in domain_name.lower():
             continue
-        
-        # Iterate through timestamp directories
+
         for timestamp_dir in domain_dir.iterdir():
             if not timestamp_dir.is_dir():
                 continue
-            
+
             timestamp = timestamp_dir.name
-            
-            # Check for required files
-            features_file = timestamp_dir / "features.json"
-            screenshot_file = timestamp_dir / "screenshot.png"
-            html_file = timestamp_dir / "page.html"
-            
-            if not features_file.exists():
-                continue
-            
-            # Read features.json to get scan details
-            try:
-                with open(features_file, 'r') as f:
-                    features = json.load(f)
-                
-                # Parse timestamp
+            for scan_dir in timestamp_dir.iterdir():
+                if (
+                    not scan_dir.is_dir()
+                    or scan_dir.is_symlink()
+                    or scan_dir.name not in owned_job_ids
+                ):
+                    continue
+
+                job_id = scan_dir.name
+                features_file = scan_dir / "features.json"
+                screenshot_file = scan_dir / "screenshot.png"
+                html_file = scan_dir / "page.html"
+                if not features_file.exists():
+                    continue
+
                 try:
-                    if 'T' in timestamp:
-                        # ISO format: 20260512T080619Z
-                        scan_time = datetime.strptime(timestamp.replace('Z', ''), "%Y%m%dT%H%M%S")
-                    else:
-                        # Unix timestamp format
-                        scan_time = datetime.fromtimestamp(float(timestamp))
-                except (ValueError, TypeError):
-                    # Fallback to file modification time if directory name is not a valid timestamp
-                    scan_time = datetime.fromtimestamp(features_file.stat().st_mtime)
-                
-                # Try to load ML features and prediction from prediction.json
-                prediction_file = timestamp_dir / "prediction.json"
-                ml_features = None
-                ml_prediction = None
-                
-                # First try prediction.json (new format)
-                if prediction_file.exists():
+                    with open(features_file, "r", encoding="utf-8") as f:
+                        features = json.load(f)
+
                     try:
-                        with open(prediction_file, 'r') as f:
-                            prediction_data = json.load(f)
+                        if 'T' in timestamp:
+                            scan_time = datetime.strptime(
+                                timestamp.replace('Z', ''),
+                                "%Y%m%dT%H%M%S",
+                            )
+                        else:
+                            scan_time = datetime.fromtimestamp(float(timestamp))
+                    except (ValueError, TypeError):
+                        scan_time = datetime.fromtimestamp(
+                            features_file.stat().st_mtime
+                        )
+
+                    prediction_file = scan_dir / "prediction.json"
+                    ml_features = None
+                    ml_prediction = None
+                    if prediction_file.exists():
+                        try:
+                            with open(prediction_file, "r", encoding="utf-8") as f:
+                                prediction_data = json.load(f)
                             ml_features = prediction_data.get("features", {})
-                            # Extract prediction result with all fields
                             ml_prediction = {
                                 "prediction": prediction_data.get("prediction"),
                                 "confidence": prediction_data.get("confidence"),
                                 "risk_score": prediction_data.get("risk_score"),
                                 "probabilities": prediction_data.get("probabilities", {}),
                                 "reasoning": prediction_data.get("reasoning", []),
-                                "top_features": prediction_data.get("top_features", [])
+                                "top_features": prediction_data.get("top_features", []),
                             }
-                    except Exception as e:
-                        logger.warning("prediction_file_parse_error", domain=domain_name, timestamp=timestamp, error=str(e))
-                
-                # Fallback: try to get from features.json (old format)
-                if not ml_features and features.get("ml_features"):
-                    ml_features = features.get("ml_features")
-                
-                if not ml_prediction and features.get("ml_prediction"):
-                    ml_prediction = features.get("ml_prediction")
-                        # Use ISO 8601 format with 'Z' suffix to indicate UTC
-                scan_time_iso = scan_time.replace(tzinfo=timezone.utc).isoformat().replace('+00:00', 'Z')
-                
-                # Calculate file sizes
-                file_sizes = {}
-                if screenshot_file.exists():
-                    file_sizes["screenshot"] = screenshot_file.stat().st_size
-                if html_file.exists():
-                    file_sizes["html"] = html_file.stat().st_size
-                if features_file.exists():
+                        except Exception as e:
+                            logger.warning(
+                                "prediction_file_parse_error",
+                                domain=domain_name,
+                                timestamp=timestamp,
+                                error=str(e),
+                            )
+
+                    if not ml_features and features.get("ml_features"):
+                        ml_features = features.get("ml_features")
+                    if not ml_prediction and features.get("ml_prediction"):
+                        ml_prediction = features.get("ml_prediction")
+
+                    scan_time_iso = (
+                        scan_time.replace(tzinfo=timezone.utc)
+                        .isoformat()
+                        .replace('+00:00', 'Z')
+                    )
+
+                    file_sizes = {}
+                    if screenshot_file.exists():
+                        file_sizes["screenshot"] = screenshot_file.stat().st_size
+                    if html_file.exists():
+                        file_sizes["html"] = html_file.stat().st_size
                     file_sizes["features"] = features_file.stat().st_size
-                
-                scan_items.append(ScanHistoryItem(
-                    domain=domain_name,
-                    timestamp=timestamp,
-                    scan_time=scan_time_iso,
-                    url=features.get("input_url", ""),
-                    final_url=features.get("final_url", ""),
-                    has_screenshot=screenshot_file.exists() and screenshot_file.stat().st_size > 0,
-                    has_html=html_file.exists() and html_file.stat().st_size > 0,
-                    form_count=features.get("signals", {}).get("form_count", 0),
-                    password_field_count=features.get("signals", {}).get("password_field_count", 0),
-                    email_count=features.get("signals", {}).get("email_count", 0),
-                    outlink_count=features.get("signals", {}).get("outlink_count", 0),
-                    title=features.get("extraction", {}).get("title"),
-                    ml_features=ml_features,
-                    ml_prediction=ml_prediction,
-                    file_sizes=file_sizes,
-                    is_partial=features.get("metadata", {}).get("is_partial", False)
-                ))
-            except Exception as e:
-                logger.error("scan_history_parse_error", domain=domain_name, timestamp=timestamp, error=str(e))
-                continue
+
+                    scan_items.append(ScanHistoryItem(
+                        domain=domain_name,
+                        timestamp=timestamp,
+                        job_id=job_id,
+                        scan_time=scan_time_iso,
+                        url=features.get("input_url", ""),
+                        final_url=features.get("final_url", ""),
+                        has_screenshot=(
+                            screenshot_file.exists()
+                            and screenshot_file.stat().st_size > 0
+                        ),
+                        has_html=html_file.exists() and html_file.stat().st_size > 0,
+                        form_count=features.get("signals", {}).get("form_count", 0),
+                        password_field_count=features.get("signals", {}).get(
+                            "password_field_count", 0
+                        ),
+                        email_count=features.get("signals", {}).get("email_count", 0),
+                        outlink_count=features.get("signals", {}).get(
+                            "outlink_count", 0
+                        ),
+                        title=features.get("extraction", {}).get("title"),
+                        ml_features=ml_features,
+                        ml_prediction=ml_prediction,
+                        file_sizes=file_sizes,
+                        is_partial=features.get("metadata", {}).get(
+                            "is_partial", False
+                        ),
+                    ))
+                except Exception as e:
+                    logger.error(
+                        "scan_history_parse_error",
+                        domain=domain_name,
+                        timestamp=timestamp,
+                        job_id=job_id,
+                        error=str(e),
+                    )
+                    continue
     
     # Sort by scan_time descending (newest first)
     scan_items.sort(key=lambda x: x.scan_time, reverse=True)
@@ -1520,30 +1563,51 @@ async def get_scan_history(
 
 @app.delete("/scan-history", dependencies=[Depends(verify_api_key)])
 async def clear_scan_history(
-    user_id: Optional[str] = Query(None),
     settings: Settings = Depends(get_settings),
-    queue: JobQueue = Depends(get_queue)
+    queue: JobQueue = Depends(get_queue),
+    current_user: DBUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
-    """Clear all scan history from data directory"""
+    """Clear scan history belonging to the authenticated user."""
     data_root = settings.data_root
-    
-    if not data_root.exists():
-        return {"message": "No history to clear", "success": True}
-        
+
     try:
-        # Delete all directories in data_root
-        # Note: In a multi-tenant system, we would filter by user_id here.
-        # For now, it clears everything as the current storage is shared.
-        for item in data_root.iterdir():
-            if item.is_dir() and not item.name.startswith('.'):
-                shutil.rmtree(item)
-        
-        # Clear jobs from queue as well to keep metrics consistent
-        queue.clear_jobs(state=JobState.DONE)
-        queue.clear_jobs(state=JobState.ERROR)
-                
+        owned_jobs = db.query(ScanJob).filter(
+            ScanJob.user_id == current_user.id
+        ).all()
+        owned_job_ids = {job.id for job in owned_jobs}
+
+        if data_root.exists() and owned_job_ids:
+            for domain_dir in data_root.iterdir():
+                if (
+                    not domain_dir.is_dir()
+                    or domain_dir.is_symlink()
+                    or domain_dir.name.startswith(".")
+                ):
+                    continue
+                for timestamp_dir in domain_dir.iterdir():
+                    if not timestamp_dir.is_dir() or timestamp_dir.is_symlink():
+                        continue
+                    for scan_dir in timestamp_dir.iterdir():
+                        if (
+                            scan_dir.is_dir()
+                            and not scan_dir.is_symlink()
+                            and scan_dir.name in owned_job_ids
+                        ):
+                            shutil.rmtree(scan_dir)
+                    if not any(timestamp_dir.iterdir()):
+                        timestamp_dir.rmdir()
+                if not any(domain_dir.iterdir()):
+                    domain_dir.rmdir()
+
+        for job in owned_jobs:
+            queue.delete_job(job.id)
+            db.delete(job)
+        db.commit()
+
         return {"message": "Scan history cleared successfully", "success": True}
     except Exception as e:
+        db.rollback()
         logger.error("clear_history_error", error=str(e))
         raise HTTPException(status_code=500, detail=f"Failed to clear history: {str(e)}")
 
@@ -1552,31 +1616,57 @@ async def clear_scan_history(
 async def delete_scan_item(
     domain: str,
     timestamp: str,
-    user_id: Optional[str] = Query(None),
     settings: Settings = Depends(get_settings),
-    queue: JobQueue = Depends(get_queue)
+    queue: JobQueue = Depends(get_queue),
+    current_user: DBUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
-    """Delete a specific scan history item"""
-    timestamp_dir = settings.data_root / domain / timestamp
-    
-    if not timestamp_dir.exists():
+    """Delete only the authenticated user's scans for a domain and timestamp."""
+    if (
+        domain in {".", ".."}
+        or timestamp in {".", ".."}
+        or Path(domain).name != domain
+        or Path(timestamp).name != timestamp
+    ):
         raise HTTPException(status_code=404, detail="Scan record not found")
-        
+
+    timestamp_dir = settings.data_root / domain / timestamp
+    if (
+        not timestamp_dir.is_dir()
+        or timestamp_dir.is_symlink()
+        or timestamp_dir.parent.is_symlink()
+    ):
+        raise HTTPException(status_code=404, detail="Scan record not found")
+
     try:
-        # Delete the timestamp directory
-        shutil.rmtree(timestamp_dir)
-        
-        # If the domain directory is now empty, delete it too
+        owned_jobs = db.query(ScanJob).filter(
+            ScanJob.user_id == current_user.id
+        ).all()
+        matched_jobs = [
+            job for job in owned_jobs
+            if (timestamp_dir / job.id).is_dir()
+            and not (timestamp_dir / job.id).is_symlink()
+        ]
+        if not matched_jobs:
+            raise HTTPException(status_code=404, detail="Scan record not found")
+
+        for job in matched_jobs:
+            shutil.rmtree(timestamp_dir / job.id)
+            queue.delete_job(job.id)
+            db.delete(job)
+
+        if not any(timestamp_dir.iterdir()):
+            timestamp_dir.rmdir()
         domain_dir = timestamp_dir.parent
         if not any(domain_dir.iterdir()):
-            shutil.rmtree(domain_dir)
-            
-        # Optional: We could also remove the job from the queue if we had its ID
-        # but the scan history only stores domain/timestamp. Metrics will adjust
-        # over time or on next reload.
-        
+            domain_dir.rmdir()
+        db.commit()
+
         return {"message": "Scan item deleted successfully", "success": True}
+    except HTTPException:
+        raise
     except Exception as e:
+        db.rollback()
         logger.error("delete_item_error", domain=domain, timestamp=timestamp, error=str(e))
         raise HTTPException(status_code=500, detail=f"Failed to delete item: {str(e)}")
 
@@ -2987,4 +3077,3 @@ async def bulk_user_action(request: BulkUserActionRequest):
         failed_ids=failed_ids,
         message=f"Successfully {request.action}d {affected_count} user(s)",
     )
-

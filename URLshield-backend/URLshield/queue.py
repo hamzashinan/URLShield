@@ -218,6 +218,17 @@ class JobQueue:
         """Remove all persisted job files across queue states"""
         self.clear_jobs()
 
+    def delete_job(self, job_id: str) -> None:
+        """Remove one persisted job file, regardless of its current state."""
+        job_path = self._find_job_file(job_id)
+        if job_path is None:
+            return
+
+        try:
+            job_path.unlink()
+        except FileNotFoundError:
+            return
+
     def clear_jobs(self, state: Optional[JobState] = None) -> None:
         """Remove persisted job files, optionally filtered by state"""
         cleared = 0
@@ -313,4 +324,3 @@ class JobQueue:
                 logger.error("job_recovery_failed", path=str(job_path), error=str(e))
         
         return recovered
-

@@ -78,18 +78,22 @@ export const ScanHistory: React.FC = () => {
       });
       
       // Filter out locally hidden/deleted items
-      const clearedAtStr = localStorage.getItem('urlshield_history_cleared_at');
+      const currentUser = localStorage.getItem('currentUser') || 'anonymous';
+      const clearedAtStr = localStorage.getItem(`urlshield_history_cleared_at_${currentUser}`);
       const clearedAt = clearedAtStr ? new Date(clearedAtStr).getTime() : 0;
+      const deletedItemsKey = `urlshield_history_deleted_items_${currentUser}`;
       
       let deletedItems: string[] = [];
       try {
-        deletedItems = JSON.parse(localStorage.getItem('urlshield_history_deleted_items') || '[]');
+        deletedItems = JSON.parse(localStorage.getItem(deletedItemsKey) || '[]');
       } catch (e) {}
       
       const visibleItems = response.items.filter(scan => {
         const scanTime = new Date(scan.scan_time).getTime();
         const isBeforeClear = scanTime <= clearedAt;
-        const isDeleted = deletedItems.includes(`${scan.domain}|${scan.timestamp}`);
+        const isDeleted = deletedItems.includes(
+          `${scan.domain}|${scan.timestamp}|${scan.job_id || ''}`
+        );
         return !isBeforeClear && !isDeleted;
       });
       
@@ -118,18 +122,24 @@ export const ScanHistory: React.FC = () => {
       // Store deleted item in localStorage instead of calling API
       // This ensures it's removed from History but remains in Alerts
       let deletedItems: string[] = [];
+      const currentUser = localStorage.getItem('currentUser') || 'anonymous';
+      const deletedItemsKey = `urlshield_history_deleted_items_${currentUser}`;
       try {
-        deletedItems = JSON.parse(localStorage.getItem('urlshield_history_deleted_items') || '[]');
+        deletedItems = JSON.parse(localStorage.getItem(deletedItemsKey) || '[]');
       } catch (e) {}
       
-      const itemKey = `${scan.domain}|${scan.timestamp}`;
+      const itemKey = `${scan.domain}|${scan.timestamp}|${scan.job_id || ''}`;
       if (!deletedItems.includes(itemKey)) {
         deletedItems.push(itemKey);
-        localStorage.setItem('urlshield_history_deleted_items', JSON.stringify(deletedItems));
+        localStorage.setItem(deletedItemsKey, JSON.stringify(deletedItems));
       }
       
       // Update local state instantly
-      setScans(prev => prev.filter(s => !(s.domain === scan.domain && s.timestamp === scan.timestamp)));
+      setScans(prev => prev.filter(s => !(
+        s.domain === scan.domain
+        && s.timestamp === scan.timestamp
+        && s.job_id === scan.job_id
+      )));
       setTotal(prev => prev > 0 ? prev - 1 : 0);
       
       setNotification({ type: 'success', message: `Scan for ${scan.domain} removed from history.` });
@@ -151,9 +161,11 @@ export const ScanHistory: React.FC = () => {
       // This prevents clock skew issues where a newly analyzed URL might be hidden
       // because the client's clock is ahead of the server's clock.
       if (scans.length > 0) {
-        localStorage.setItem('urlshield_history_cleared_at', scans[0].scan_time);
+        const currentUser = localStorage.getItem('currentUser') || 'anonymous';
+        localStorage.setItem(`urlshield_history_cleared_at_${currentUser}`, scans[0].scan_time);
       } else {
-        localStorage.setItem('urlshield_history_cleared_at', new Date().toISOString());
+        const currentUser = localStorage.getItem('currentUser') || 'anonymous';
+        localStorage.setItem(`urlshield_history_cleared_at_${currentUser}`, new Date().toISOString());
       }
       
       // Update local state instantly
@@ -394,7 +406,7 @@ export const ScanHistory: React.FC = () => {
             
             return (
               <div
-                key={`${scan.domain}-${scan.timestamp}`}
+                key={`${scan.domain}-${scan.timestamp}-${scan.job_id || ''}`}
                 className="bg-surface border border-border rounded-lg p-5 hover:border-primary/50 transition-all duration-200 cursor-pointer group relative overflow-hidden"
                 onClick={() => handleViewEvidence(scan)}
               >

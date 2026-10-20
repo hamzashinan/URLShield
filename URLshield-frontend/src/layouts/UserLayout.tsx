@@ -5,12 +5,16 @@ import { Footer } from '../components/user/Footer';
 interface UserLayoutProps {
   currentPage: string;
   onPageChange: (page: string) => void;
+  isAuthenticated?: boolean;
+  onLogout?: () => void;
   children: React.ReactNode;
 }
 
 export const UserLayout: React.FC<UserLayoutProps> = ({
   currentPage,
   onPageChange,
+  isAuthenticated,
+  onLogout,
   children,
 }) => {
   return (
@@ -18,6 +22,8 @@ export const UserLayout: React.FC<UserLayoutProps> = ({
       <UserNavbar
         currentPage={currentPage}
         onPageChange={onPageChange}
+        isAuthenticated={isAuthenticated}
+        onLogout={onLogout}
       />
 
       <main className="flex-1">

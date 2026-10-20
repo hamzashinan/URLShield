@@ -21,6 +21,16 @@ class Settings(BaseSettings):
         alias="URLSHIELD_API_KEY"
     )
 
+    jwt_secret_key: str = Field(
+        default="",
+        alias="URLSHIELD_JWT_SECRET_KEY"
+    )
+
+    jwt_access_token_expire_minutes: int = Field(
+        default=60,
+        alias="URLSHIELD_JWT_ACCESS_TOKEN_EXPIRE_MINUTES"
+    )
+
     allow_origin: str = Field(
         default="http://localhost:5173",
         alias="URLSHIELD_ALLOW_ORIGIN"
@@ -71,7 +81,6 @@ class Settings(BaseSettings):
     # Worker
     worker_concurrency: int = 24
     queue_check_interval_ms: int = 1000
-    cleanup_on_start: bool = True
 
     # Logging
     log_level: str = Field(

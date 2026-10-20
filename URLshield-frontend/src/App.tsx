@@ -27,8 +27,14 @@ import { AuthPage } from './pages/user/AuthPage';
 
 function App() {
   const [role, setRole] = useState<'user' | 'admin'>('user');
-  const [currentPage, setCurrentPage] = useState('home');
+  const [currentPage, setCurrentPage] = useState('auth');
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
+  const [isUserAuthenticated, setIsUserAuthenticated] = useState(
+    () => Boolean(
+      localStorage.getItem('currentUser')
+      && localStorage.getItem('urlshield_access_token')
+    )
+  );
 
   // Check URL for admin mode on mount
   useEffect(() => {
@@ -47,8 +53,12 @@ function App() {
 
   // Sync default page when role changes
   useEffect(() => {
-    setCurrentPage(role === 'user' ? 'home' : 'overview');
-  }, [role]);
+    if (role === 'user') {
+      setCurrentPage(isUserAuthenticated ? 'home' : 'auth');
+    } else {
+      setCurrentPage('overview');
+    }
+  }, [role, isUserAuthenticated]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -64,7 +74,9 @@ function App() {
   // ─── User Mode ────────────────────────────────────────────────────────────
   if (role === 'user') {
     const renderUserPage = () => {
-      switch (currentPage) {
+      const pageToRender = isUserAuthenticated ? currentPage : 'auth';
+
+      switch (pageToRender) {
         case 'home':
           return <HomePage />;
         case 'evidence':
@@ -97,7 +109,10 @@ function App() {
             </div>
           );
         case 'auth':
-          return <AuthPage />;
+          return <AuthPage onLoginSuccess={() => {
+            setIsUserAuthenticated(true);
+            setCurrentPage('home');
+          }} />;
         default:
           return <HomePage />;
       }
@@ -108,6 +123,12 @@ function App() {
         <UserLayout
           currentPage={currentPage}
           onPageChange={setCurrentPage}
+          isAuthenticated={isUserAuthenticated}
+          onLogout={() => {
+            localStorage.removeItem('currentUser');
+            localStorage.removeItem('urlshield_access_token');
+            setIsUserAuthenticated(false);
+          }}
         >
           {renderUserPage()}
         </UserLayout>

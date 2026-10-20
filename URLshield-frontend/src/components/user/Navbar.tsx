@@ -5,6 +5,8 @@ import { useTheme } from '../../contexts/ThemeContext';
 interface UserNavbarProps {
   currentPage: string;
   onPageChange: (page: string) => void;
+  isAuthenticated?: boolean;
+  onLogout?: () => void;
 }
 
 const navLinks = [
@@ -19,6 +21,8 @@ const navLinks = [
 export const UserNavbar: React.FC<UserNavbarProps> = ({
   currentPage,
   onPageChange,
+  isAuthenticated,
+  onLogout,
 }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
@@ -51,7 +55,7 @@ export const UserNavbar: React.FC<UserNavbarProps> = ({
 
           {/* Desktop Nav Links */}
           <div className="hidden md:flex items-center gap-1">
-            {navLinks.map((link) => {
+            {isAuthenticated && navLinks.map((link) => {
               const isActive = currentPage === link.id;
 
               return (
@@ -92,17 +96,29 @@ export const UserNavbar: React.FC<UserNavbarProps> = ({
             
             <div className="w-px h-4 bg-border mx-1" />
             
-            <button
-              onClick={() => onPageChange('auth')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 text-sm font-bold shadow-lg ${
-                currentPage === 'auth'
-                  ? 'bg-primary text-white shadow-primary/30 scale-105'
-                  : 'bg-surface border border-border text-text hover:border-primary/50 hover:bg-primary/5 hover:text-primary'
-              }`}
-            >
-              <User size={16} />
-              {currentPage === 'auth' ? 'Signing In...' : 'Sign In'}
-            </button>
+            {isAuthenticated ? (
+              <button
+                onClick={() => {
+                  if (onLogout) onLogout();
+                }}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 text-sm font-bold bg-surface border border-border text-text hover:border-danger/50 hover:text-danger hover:bg-danger/5"
+              >
+                <User size={16} />
+                Sign Out
+              </button>
+            ) : (
+              <button
+                onClick={() => onPageChange('auth')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 text-sm font-bold shadow-lg ${
+                  currentPage === 'auth'
+                    ? 'bg-primary text-white shadow-primary/30 scale-105'
+                    : 'bg-surface border border-border text-text hover:border-primary/50 hover:bg-primary/5 hover:text-primary'
+                }`}
+              >
+                <User size={16} />
+                {currentPage === 'auth' ? 'Signing In...' : 'Sign In'}
+              </button>
+            )}
           </div>
 
           {/* Mobile Hamburger */}
@@ -119,7 +135,7 @@ export const UserNavbar: React.FC<UserNavbarProps> = ({
       {mobileOpen && (
         <div className="md:hidden border-t border-border bg-surface animate-slide-down">
           <div className="px-4 py-3 space-y-1">
-            {navLinks.map((link) => {
+            {isAuthenticated && navLinks.map((link) => {
               const isActive = currentPage === link.id;
               return (
                 <button
@@ -149,20 +165,33 @@ export const UserNavbar: React.FC<UserNavbarProps> = ({
             Admin
           </button>
             <div className="border-t border-border pt-4 mt-4">
-              <button
-                onClick={() => {
-                  onPageChange('auth');
-                  setMobileOpen(false);
-                }}
-                className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl transition-all duration-300 text-sm font-bold ${
-                  currentPage === 'auth'
-                    ? 'bg-primary text-white'
-                    : 'bg-surface border border-border text-text'
-                }`}
-              >
-                <User size={18} />
-                Sign In 
-              </button>
+              {isAuthenticated ? (
+                <button
+                  onClick={() => {
+                    if (onLogout) onLogout();
+                    setMobileOpen(false);
+                  }}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl transition-all duration-300 text-sm font-bold bg-surface border border-border text-text hover:bg-danger/10 hover:text-danger"
+                >
+                  <User size={18} />
+                  Sign Out
+                </button>
+              ) : (
+                <button
+                  onClick={() => {
+                    onPageChange('auth');
+                    setMobileOpen(false);
+                  }}
+                  className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl transition-all duration-300 text-sm font-bold ${
+                    currentPage === 'auth'
+                      ? 'bg-primary text-white'
+                      : 'bg-surface border border-border text-text'
+                  }`}
+                >
+                  <User size={18} />
+                  Sign In 
+                </button>
+              )}
             </div>
           </div>
         </div>

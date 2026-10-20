@@ -171,11 +171,13 @@ export const URLAnalysis: React.FC<URLAnalysisProps> = () => {
         payload.legitimate_domain = hints.legitimateDomain;
       }
 
+      const accessToken = localStorage.getItem('urlshield_access_token');
       const scrapeResponse = await fetch(`${API_URL}/scrape`, {
         method: 'POST',
         headers: {
           'X-API-Key': API_KEY,
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
         },
         body: JSON.stringify(payload)
       });
@@ -197,7 +199,10 @@ export const URLAnalysis: React.FC<URLAnalysisProps> = () => {
         }
 
         const jobResponse = await fetch(`${API_URL}/job/${jobId}`, {
-          headers: { 'X-API-Key': API_KEY }
+          headers: {
+            'X-API-Key': API_KEY,
+            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+          }
         });
 
         if (!jobResponse.ok) {

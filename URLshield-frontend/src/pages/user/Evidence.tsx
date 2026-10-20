@@ -56,7 +56,18 @@ export const Evidence: React.FC = () => {
       const scanHistory = await apiClient.getScanHistory({ limit: 50 });
       const evidenceItems: EvidenceItem[] = [];
 
+      const currentUser = localStorage.getItem('currentUser');
+      const userUrls = currentUser ? JSON.parse(localStorage.getItem(`user_urls_${currentUser}`) || '[]') : [];
+
       for (const scan of scanHistory.items) {
+        const isOwned = userUrls.some((u: string) => {
+          if (!u) return false;
+          if (u === scan.url || u === scan.domain) return true;
+          const norm = (s: string) => s.replace(/^https?:\/\//, '').replace(/\/$/, '');
+          const uNorm = norm(u);
+          return norm(scan.url) === uNorm || norm(scan.domain) === uNorm;
+        });
+        if (!isOwned) continue;
         if (filterDomain && filterTimestamp) {
           if (
             scan.domain !== filterDomain ||

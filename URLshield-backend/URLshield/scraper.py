@@ -79,6 +79,7 @@ class Scraper:
 
         logger.info("browser_stopped")
 
+    
     async def scrape_url(
         self,
         job_id: str,
@@ -88,27 +89,26 @@ class Scraper:
         legitimate_domain: Optional[str] = None,
         analysis_mode: Optional[str] = "full_analysis",
     ) -> ScrapedData:
-        """Scrape URL and capture real screenshot"""
+        """Scrape URL and capture real screenshot."""
 
         start_time = time.time()
 
-        # Normalize URL
         if not url.startswith(("http://", "https://")):
             url = "https://" + url
 
         logger.info("scrape_started", job_id=job_id, url=url)
 
-        # Extract registered domain
         extracted = tldextract.extract(url)
-        registered_domain = f"{extracted.domain}.{extracted.suffix}"
+        registered_domain = extracted.registered_domain or "unknown"
 
-        # Create output directory
+        # Unique directory for every scan, including concurrent scans
         timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
 
         output_dir = (
             self.settings.data_root
             / registered_domain
             / timestamp
+            / job_id
         )
 
         mkdir_with_permissions(output_dir)
@@ -134,7 +134,7 @@ class Scraper:
 
         page = await self.browser.new_page(
             viewport={"width": 1366, "height": 768},
-            user_agent=self.settings.user_agent
+            user_agent=self.settings.user_agent,
         )
 
         try:
@@ -143,7 +143,7 @@ class Scraper:
             response = await page.goto(
                 url,
                 wait_until="networkidle",
-                timeout=60000
+                timeout=60000,
             )
 
             await asyncio.sleep(3)
@@ -157,99 +157,84 @@ class Scraper:
             logger.info(
                 "page_loaded",
                 final_url=final_url,
-                status=status_code
+                status=status_code,
             )
 
-            # Save HTML
             html_content = await page.content()
 
             html_path.write_text(
                 html_content,
-                encoding="utf-8"
+                encoding="utf-8",
             )
 
-            logger.info(
-                "html_saved",
-                path=str(html_path)
-            )
+            logger.info("html_saved", path=str(html_path))
 
-            # Take REAL screenshot
             await page.screenshot(
                 path=str(screenshot_path),
-                full_page=True
+                full_page=True,
             )
 
             logger.info(
                 "screenshot_saved",
-                path=str(screenshot_path)
+                path=str(screenshot_path),
             )
 
-            # Compute image hash
-            screenshot_hash = self._compute_image_hash(
-                screenshot_path
-            )
+            screenshot_hash = self._compute_image_hash(screenshot_path)
 
-            # Extract DOM signals
             dom_signals = await self._extract_dom_signals(
                 page,
                 html_content,
-                final_url
+                final_url,
             )
 
             text_content = BeautifulSoup(
                 html_content,
-                "html.parser"
+                "html.parser",
             ).get_text()
 
         except Exception as e:
             logger.error(
                 "scrape_failed",
                 url=url,
-                error=str(e)
+                error=str(e),
             )
 
-            # Save error HTML
             html_path.write_text(
                 f"""
-        <html>
-            <body>
-                <h1>Scrape Failed</h1>
-                <p>{str(e)}</p>
-            </body>
-        </html>
-        """,
-                encoding="utf-8"
+                <html>
+                    <body>
+                        <h1>Scrape Failed</h1>
+                        <p>{str(e)}</p>
+                    </body>
+                </html>
+                """,
+                encoding="utf-8",
             )
 
-            # Generate placeholder so evidence thumbnails remain available
             screenshot_hash = self._generate_placeholder_screenshot(
-                screenshot_path, url, str(e)
+                screenshot_path,
+                url,
+                str(e),
             )
 
         finally:
             await page.close()
 
-        # Collect DNS info
         try:
-            dns_info = await self._collect_dns_info(
-                registered_domain
-            )
+            dns_info = await self._collect_dns_info(registered_domain)
         except Exception as e:
             logger.warning(
                 "dns_collection_failed",
-                error=str(e)
+                error=str(e),
             )
             dns_info = DNSInfo()
 
-        # Collect RDAP info
         try:
-            rdap_info = await self._collect_rdap_info(
-                registered_domain
-            )
+            rdap_info = await self._collect_rdap_info(registered_domain)
         except Exception as e:
             logger.warning(
                 "rdap_collection_failed",
-                error=str(e)
+                error=str(e),
             )
             rdap_info = None
 
@@ -264,26 +249,25 @@ class Scraper:
             html_content=html_content,
             text_content=text_content,
             html_path=html_path,
-            screenshot_path=screenshot_path if screenshot_path else None,
-            screenshot_hash=screenshot_hash if screenshot_path else None,
+            screenshot_path=screenshot_path,
+            screenshot_hash=screenshot_hash,
             dns_info=dns_info,
             rdap_info=rdap_info,
             dom_signals=dom_signals,
             registered_domain=registered_domain,
             scraped_at=datetime.now(timezone.utc),
-            duration_ms=duration_ms
+            duration_ms=duration_ms,
         )
 
-        # Save features
         try:
             self._save_features(
                 scraped_data,
-                output_dir / "features.json"
+                output_dir / "features.json",
             )
         except Exception as e:
             logger.warning(
                 "feature_save_failed",
-                error=str(e)
+                error=str(e),
             )
 
         logger.info(
@@ -292,10 +276,11 @@ class Scraper:
             url=url,
             final_url=final_url,
             status_code=status_code,
-            duration_ms=duration_ms
+            duration_ms=duration_ms,
         )
 
         return scraped_data
+
 
     async def capture_screenshot_for_evidence(
         self,
@@ -490,6 +475,7 @@ class Scraper:
             )
             return ""
 
+   
     async def analyze_url_only(
         self,
         job_id: str,
@@ -499,11 +485,16 @@ class Scraper:
         brand_hint: Optional[str] = None,
         legitimate_domain: Optional[str] = None,
     ) -> ScrapedData:
-        """Perform URL-only analysis when full scrape fails"""
-        
+        """Perform URL-only analysis when full scrape fails."""
+
         start_time = time.time()
-        
-        # Create a minimal HTML file with error information
+
+        # Ensure the unique evidence directory exists
+        mkdir_with_permissions(output_dir)
+
+        html_path = output_dir / "page.html"
+        screenshot_path = output_dir / "screenshot.png"
+
         html_content = f"""
         <html>
         <head><title>Analysis Failed - {url}</title></head>
@@ -515,59 +506,66 @@ class Scraper:
         </body>
         </html>
         """
-        
-        # Save HTML file
-        html_path = output_dir / "page.html"
-        with open(html_path, 'w', encoding='utf-8') as f:
+
+        with open(html_path, "w", encoding="utf-8") as f:
             f.write(html_content)
-        
-        # Get basic domain info
-        import tldextract
+
         ext = tldextract.extract(url)
         registered_domain = ext.registered_domain or "unknown"
-        
-        # Collect DNS info (this might work even if the page doesn't load)
+
         try:
             dns_info = await self._collect_dns_info(registered_domain)
         except Exception:
-            dns_info = DNSInfo()  # Empty DNS info
-        
-        # Create minimal DOM signals
+            dns_info = DNSInfo()
+
         dom_signals = DOMSignals(
             text_length=len(html_content),
             form_count=0,
             password_field_count=0,
-            email_mentions=html_content.lower().count('@'),
+            email_mentions=html_content.lower().count("@"),
             outlink_count=0,
-            outlinks=[]
+            outlinks=[],
         )
-        
+
         duration_ms = (time.time() - start_time) * 1000
-        
-        # Generate placeholder screenshot
+
         screenshot_hash = self._generate_placeholder_screenshot(
-            screenshot_path, url, error_message
+            screenshot_path,
+            url,
+            error_message,
         )
-        
-        # Create ScrapedData with placeholder screenshot
+
         scraped_data = ScrapedData(
             job_id=job_id,
             input_url=url,
-            final_url=url,  # Use input URL as final URL since we couldn't resolve it
-            status_code=0,  # No status code for failed requests
-            headers={},  # Empty headers
+            final_url=url,
+            status_code=0,
+            headers={},
             html_path=html_path,
-            screenshot_path=screenshot_path,  # Include placeholder screenshot
-            screenshot_hash=screenshot_hash,  # Include hash of placeholder
+            screenshot_path=screenshot_path,
+            screenshot_hash=screenshot_hash,
             dns_info=dns_info,
             rdap_info=None,
             dom_signals=dom_signals,
             registered_domain=registered_domain,
             scraped_at=datetime.now(timezone.utc),
             duration_ms=duration_ms,
-            is_partial=True
+            is_partial=True,
         )
-        
+
+        # Save features for fallback analysis too
+        try:
+            self._save_features(
+                scraped_data,
+                output_dir / "features.json",
+            )
+        except Exception as e:
+            logger.warning(
+                "fallback_feature_save_failed",
+                job_id=job_id,
+                error=str(e),
+            )
+
         return scraped_data
 
     def _compute_image_hash(self, image_path: Path) -> str:

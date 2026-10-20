@@ -264,6 +264,7 @@ class ScanHistoryItem(BaseModel):
     
     domain: str
     timestamp: str
+    job_id: Optional[str] = None
     scan_time: str  # Changed from datetime to str to have full control
     url: str
     final_url: str
@@ -454,5 +455,4 @@ class BulkUserActionResponse(BaseModel):
     affected_count: int
     failed_ids: List[str] = Field(default_factory=list)
     message: str
-
 

@@ -60,17 +60,32 @@ export const Watchlist: React.FC = () => {
       setLoading(true);
       console.log('Refreshing watchlist data...');
       
-      // Fetch both metrics and scan history
-      const [metricsData, historyData] = await Promise.all([
-        apiClient.getWatchlistMetrics(),
-        apiClient.getScanHistory({ limit: 10 })
-      ]);
+      // Fetch scan history
+      const historyData = await apiClient.getScanHistory({ limit: 100 });
       
-      console.log('Refreshed metrics data:', metricsData);
-      console.log('Refreshed history data:', historyData.items?.length || 0, 'items');
+      const currentUser = localStorage.getItem('currentUser');
+      const userUrls = currentUser ? JSON.parse(localStorage.getItem(`user_urls_${currentUser}`) || '[]') : [];
+      const filteredHistory = (historyData.items || []).filter((item: any) => {
+        return userUrls.some((u: string) => {
+          if (!u) return false;
+          if (u === item.url || u === item.domain) return true;
+          const norm = (s: string) => s.replace(/^https?:\/\//, '').replace(/\/$/, '');
+          const uNorm = norm(u);
+          return norm(item.url) === uNorm || norm(item.domain) === uNorm;
+        });
+      });
+
+      const computedMetrics = {
+        activeItems: filteredHistory.length,
+        escalated: filteredHistory.filter((h: any) => h.ml_prediction && h.ml_prediction.prediction && h.ml_prediction.prediction.toLowerCase() !== 'legitimate').length,
+        resolved: filteredHistory.filter((h: any) => h.ml_prediction && h.ml_prediction.prediction && h.ml_prediction.prediction.toLowerCase() === 'legitimate').length
+      };
+
+      console.log('Refreshed metrics data:', computedMetrics);
+      console.log('Refreshed history data:', filteredHistory.length, 'items');
       
-      setMetrics(metricsData);
-      setHistory(historyData.items || []);
+      setMetrics(computedMetrics);
+      setHistory(filteredHistory);
       setApiCallMade(true);
       
       // Force re-render by updating refresh key
@@ -90,15 +105,33 @@ export const Watchlist: React.FC = () => {
       if (!loading) {
         try {
           setIsUpdatingMetrics(true);
-          const metricsData = await apiClient.getWatchlistMetrics();
+          const historyData = await apiClient.getScanHistory({ limit: 100 });
+          
+          const currentUser = localStorage.getItem('currentUser');
+          const userUrls = currentUser ? JSON.parse(localStorage.getItem(`user_urls_${currentUser}`) || '[]') : [];
+          const filteredHistory = (historyData.items || []).filter((item: any) => {
+            return userUrls.some((u: string) => {
+              if (!u) return false;
+              if (u === item.url || u === item.domain) return true;
+              const norm = (s: string) => s.replace(/^https?:\/\//, '').replace(/\/$/, '');
+              const uNorm = norm(u);
+              return norm(item.url) === uNorm || norm(item.domain) === uNorm;
+            });
+          });
+
+          const computedMetrics = {
+            activeItems: filteredHistory.length,
+            escalated: filteredHistory.filter((h: any) => h.ml_prediction && h.ml_prediction.prediction && h.ml_prediction.prediction.toLowerCase() !== 'legitimate').length,
+            resolved: filteredHistory.filter((h: any) => h.ml_prediction && h.ml_prediction.prediction && h.ml_prediction.prediction.toLowerCase() === 'legitimate').length
+          };
           
           // If active items count changed, especially if it dropped to 0, 
           // trigger a full refresh to show the new history item immediately
-          if (metrics && metricsData.activeItems !== metrics.activeItems) {
-            console.log(`Watchlist: activeItems changed from ${metrics.activeItems} to ${metricsData.activeItems}. Refreshing...`);
+          if (metrics && computedMetrics.activeItems !== metrics.activeItems) {
+            console.log(`Watchlist: activeItems changed from ${metrics.activeItems} to ${computedMetrics.activeItems}. Refreshing...`);
             handleRefresh();
           } else {
-            setMetrics(metricsData);
+            setMetrics(computedMetrics);
           }
           
           setLastMetricsUpdate(new Date());
@@ -129,27 +162,38 @@ export const Watchlist: React.FC = () => {
       try {
         setLoading(true);
         setError(null);
-        // Fetch both metrics and scan history
-        const [metricsData, historyData] = await Promise.all([
-          apiClient.getWatchlistMetrics(),
-          apiClient.getScanHistory({ limit: 10 })
-        ]);
-        
-        console.log('Raw metrics data:', JSON.stringify(metricsData, null, 2));
-        console.log('Raw history data:', JSON.stringify(historyData, null, 2));
-        
-        // Always set metrics data even if no history
-        setMetrics(metricsData);
-        setApiCallMade(true);
-        console.log('Set metrics:', metricsData);
+        // Fetch scan history
+        const historyData = await apiClient.getScanHistory({ limit: 100 });
         
         // Handle history data
-        if (!historyData.items || historyData.items.length === 0) {
-          console.log('No scan history found in backend');
+        const currentUser = localStorage.getItem('currentUser');
+        const userUrls = currentUser ? JSON.parse(localStorage.getItem(`user_urls_${currentUser}`) || '[]') : [];
+        const filteredHistory = (historyData.items || []).filter((item: any) => {
+          return userUrls.some((u: string) => {
+            if (!u) return false;
+            if (u === item.url || u === item.domain) return true;
+            const norm = (s: string) => s.replace(/^https?:\/\//, '').replace(/\/$/, '');
+            const uNorm = norm(u);
+            return norm(item.url) === uNorm || norm(item.domain) === uNorm;
+          });
+        });
+
+        const computedMetrics = {
+          activeItems: filteredHistory.length,
+          escalated: filteredHistory.filter((h: any) => h.ml_prediction && h.ml_prediction.prediction && h.ml_prediction.prediction.toLowerCase() !== 'legitimate').length,
+          resolved: filteredHistory.filter((h: any) => h.ml_prediction && h.ml_prediction.prediction && h.ml_prediction.prediction.toLowerCase() === 'legitimate').length
+        };
+
+        setMetrics(computedMetrics);
+        setApiCallMade(true);
+        console.log('Set metrics:', computedMetrics);
+
+        if (filteredHistory.length === 0) {
+          console.log('No matching scan history found for user');
           setHistory([]);
         } else {
-          setHistory(historyData.items);
-          console.log('Set history to:', historyData.items.length, 'items');
+          setHistory(filteredHistory);
+          console.log('Set history to:', filteredHistory.length, 'items');
         }
         console.log('API call completed successfully');
       } catch (error) {

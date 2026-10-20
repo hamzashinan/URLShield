@@ -1,8 +1,7 @@
 """Background worker for processing scrape jobs"""
 
 import asyncio
-import shutil
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict
 
 from URLshield.config import Settings
@@ -47,39 +46,9 @@ class Worker:
         self.running = False
         self._tasks = []
 
-    def _cleanup_persistent_state(self) -> None:
-        """Remove persisted queue files and stored job artifacts before startup."""
-        try:
-            self.queue.clear_all_jobs()
-        except Exception as exc:
-            logger.warning("queue_cleanup_failed", error=str(exc))
-
-        kept_directories = {".queue"}
-
-        for path in self.settings.data_root.iterdir():
-            if path.name in kept_directories:
-                continue
-
-            if path.is_dir():
-                try:
-                    shutil.rmtree(path, ignore_errors=True)
-                    logger.debug("storage_directory_removed", path=str(path))
-                except Exception as exc:
-                    logger.warning("storage_directory_remove_failed", path=str(path), error=str(exc))
-            else:
-                try:
-                    path.unlink()
-                    logger.debug("storage_file_removed", path=str(path))
-                except FileNotFoundError:
-                    continue
-                except Exception as exc:
-                    logger.warning("storage_file_remove_failed", path=str(path), error=str(exc))
-
     async def start(self):
         """Start the worker"""
         self.running = True
-        if self.settings.cleanup_on_start:
-            self._cleanup_persistent_state()
         logger.info("worker_started", concurrency=self.settings.worker_concurrency)
         
         # Recover stale jobs
@@ -287,7 +256,12 @@ class Worker:
                         ext = tldextract.extract(job_status.url)
                         registered_domain = ext.registered_domain or "unknown"
                         timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-                        output_dir = self.settings.data_root / registered_domain / timestamp
+                        output_dir = (
+                            self.settings.data_root
+                            / registered_domain
+                            / timestamp
+                            / job_status.id
+                        )
                         mkdir_with_permissions(output_dir)
                         
                         # Run URL-only analysis with timeout (2 minutes)
@@ -358,5 +332,4 @@ async def run_worker(settings: Settings):
         logger.info("worker_interrupted")
     finally:
         await worker.stop()
-
 

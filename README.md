@@ -111,7 +111,7 @@ This starts the FastAPI backend plus worker on:
 ```powershell
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned
 & .\.venv\Scripts\Activate.ps1
-cd URLshield-frondend
+cd URLshield-frontend
 npm install
 npm run dev -- --host 0.0.0.0
 ```

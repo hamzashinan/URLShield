@@ -232,6 +232,7 @@ export interface APIError {
 export interface ScanHistoryItem {
   domain: string;
   timestamp: string;
+  job_id?: string | null;
   scan_time: string;
   url: string;
   final_url: string;

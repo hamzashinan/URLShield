@@ -120,7 +120,19 @@ export const Alerts: React.FC<AlertsProps> = ({ onNavigateToEvidence }) => {
         offset: (currentPage - 1) * 50
       });
 
+      const currentUser = localStorage.getItem('currentUser');
+      const userUrls = currentUser ? JSON.parse(localStorage.getItem(`user_urls_${currentUser}`) || '[]') : [];
+
       let mappedAlerts: Alert[] = data.items
+        .filter((item: any) => {
+          return userUrls.some((u: string) => {
+            if (!u) return false;
+            if (u === item.url || u === item.domain) return true;
+            const norm = (s: string) => s.replace(/^https?:\/\//, '').replace(/\/$/, '');
+            const uNorm = norm(u);
+            return norm(item.url) === uNorm || norm(item.domain) === uNorm;
+          });
+        })
         .map((item: ScanHistoryResponse['items'][number]) => {
           const prediction = item.ml_prediction;
 

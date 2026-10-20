@@ -1,5 +1,6 @@
 beautifulsoup4
 dnspython
+email-validator
 fastapi
 fuzzywuzzy
 imagehash
@@ -9,14 +10,18 @@ numpy
 openpyxl
 pandas
 Pillow
+PyJWT
 playwright
 publicsuffix2
 pydantic
 pydantic-settings
+pwdlib[argon2]
+python-whois
 python-Levenshtein
 python-multipart
 PyYAML
 requests
+selenium
 scikit-learn
 sse-starlette
 SQLAlchemy

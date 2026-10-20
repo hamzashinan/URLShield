@@ -1,59 +1,111 @@
-"""SQLAlchemy database models for URLShield."""
-
 from datetime import datetime
 
-from sqlalchemy import DateTime, Integer, String, Text
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import DateTime, ForeignKey, String, Text
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from URLshield.database import Base
 
 
-class ScanJob(Base):
-    """Persistent URL analysis job."""
+class User(Base):
+    __tablename__ = "users"
 
+    id: Mapped[int] = mapped_column(
+        primary_key=True,
+        autoincrement=True
+    )
+
+    username: Mapped[str] = mapped_column(
+        String(100),
+        unique=True,
+        index=True
+    )
+
+    email: Mapped[str] = mapped_column(
+        String(255),
+        unique=True,
+        index=True
+    )
+
+    password_hash: Mapped[str] = mapped_column(
+        String(255)
+    )
+
+    role: Mapped[str] = mapped_column(
+        String(30),
+        default="user",
+        nullable=False
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=datetime.utcnow,
+        nullable=False
+    )
+
+    scans: Mapped[list["ScanJob"]] = relationship(
+        back_populates="user"
+    )
+
+
+class ScanJob(Base):
     __tablename__ = "scan_jobs"
 
     id: Mapped[str] = mapped_column(
         String(36),
-        primary_key=True,
+        primary_key=True
+    )
+
+    user_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id"),
+        nullable=True,
+        index=True
     )
 
     url: Mapped[str] = mapped_column(
         Text,
-        nullable=False,
+        nullable=False
     )
 
     state: Mapped[str] = mapped_column(
         String(20),
         nullable=False,
         default="queued",
-        index=True,
+        index=True
     )
 
     brand_hint: Mapped[str | None] = mapped_column(
         String(255),
-        nullable=True,
+        nullable=True
     )
 
     legitimate_domain: Mapped[str | None] = mapped_column(
         String(255),
-        nullable=True,
+        nullable=True
     )
 
     error: Mapped[str | None] = mapped_column(
         Text,
-        nullable=True,
+        nullable=True
+    )
+
+    evidence_path: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True
     )
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime,
         default=datetime.utcnow,
-        nullable=False,
+        nullable=False
     )
 
     updated_at: Mapped[datetime] = mapped_column(
         DateTime,
         default=datetime.utcnow,
         onupdate=datetime.utcnow,
-        nullable=False,
+        nullable=False
+    )
+
+    user: Mapped[User | None] = relationship(
+        back_populates="scans"
     )

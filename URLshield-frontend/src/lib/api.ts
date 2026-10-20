@@ -82,11 +82,13 @@ class URLShieldAPIClient {
     options: RequestInit = {}
   ): Promise<T> {
     const url = `${this.baseURL}${endpoint}`;
+    const token = localStorage.getItem('urlshield_access_token');
 
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
       'X-API-Key': this.apiKey,
       ...options.headers,
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     };
 
     const controller = new AbortController();
@@ -103,7 +105,9 @@ class URLShieldAPIClient {
 
       if (!response.ok) {
         if (response.status === 401) {
-          throw new Error('Invalid API key. Please check your settings.');
+          throw new Error(endpoint.startsWith('/auth/')
+            ? 'Invalid email or password.'
+            : 'Authentication failed. Please sign in again.');
         }
 
         const error: APIError = await response.json().catch(() => ({
@@ -162,6 +166,25 @@ class URLShieldAPIClient {
   }
 
   // API Endpoints
+
+  async register(username: string, email: string, password: string): Promise<void> {
+    await this.request('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({ username, email, password }),
+    });
+  }
+
+  async login(email: string, password: string): Promise<void> {
+    const response = await this.request<{
+      access_token: string;
+      user: { email: string };
+    }>('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
+    localStorage.setItem('urlshield_access_token', response.access_token);
+    localStorage.setItem('currentUser', response.user.email);
+  }
 
   async health(): Promise<HealthResponse> {
     return this.request<HealthResponse>('/health');

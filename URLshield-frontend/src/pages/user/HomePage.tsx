@@ -121,12 +121,18 @@ export const HomePage: React.FC = () => {
       setRecentLoading(true);
       try {
         const scanUrl = selectedModel === 'main' ? 'http://localhost:8080' : 'http://localhost:8081';
+        const accessToken = localStorage.getItem('urlshield_access_token');
         const res = await fetch(`${scanUrl}/scan-history?limit=5`, {
-          headers: { 'X-API-Key': API_KEY },
+          headers: {
+            'X-API-Key': API_KEY,
+            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+          },
         });
         if (res.ok) {
           const data = await res.json();
-          const items = (data.items || []).slice(0, 5).map((item: any) => ({
+          const items = (data.items || [])
+            .slice(0, 5)
+            .map((item: any) => ({
             domain: item.domain || '',
             url: item.url || '',
             scan_time: item.scan_time || '',
@@ -235,9 +241,14 @@ export const HomePage: React.FC = () => {
       if (hints.legitimateDomain) payload.legitimate_domain = hints.legitimateDomain;
 
       const targetUrl = selectedModel === 'main' ? 'http://localhost:8080' : 'http://localhost:8081';
+      const accessToken = localStorage.getItem('urlshield_access_token');
       const scrapeRes = await fetch(`${targetUrl}/scrape`, {
         method: 'POST',
-        headers: { 'X-API-Key': API_KEY, 'Content-Type': 'application/json' },
+        headers: {
+          'X-API-Key': API_KEY,
+          'Content-Type': 'application/json',
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
         body: JSON.stringify(payload),
         signal,
       });
@@ -250,10 +261,37 @@ export const HomePage: React.FC = () => {
       const pollJob = async (): Promise<void> => {
         if (signal?.aborted) throw new Error('AbortError');
         if (attempts >= maxAttempts) throw new Error('Analysis timeout');
-        const jobRes = await fetch(`${targetUrl}/job/${jobId}`, { headers: { 'X-API-Key': API_KEY }, signal });
+        const jobRes = await fetch(`${targetUrl}/job/${jobId}`, {
+          headers: {
+            'X-API-Key': API_KEY,
+            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+          },
+          signal,
+        });
         if (!jobRes.ok) throw new Error('Failed to check job status');
         const jobData = (await jobRes.json()) as JobDetail;
         if (jobData.state === 'done') {
+          const currentUser = localStorage.getItem('currentUser');
+          if (currentUser) {
+            const key = `user_urls_${currentUser}`;
+            const userUrls = JSON.parse(localStorage.getItem(key) || '[]');
+            let modified = false;
+            
+            const toAdd = [inputUrl];
+            if (jobData.url) toAdd.push(jobData.url);
+            if (jobData.domain_details?.domain) toAdd.push(jobData.domain_details.domain);
+            
+            for (const u of toAdd) {
+              if (!userUrls.includes(u)) {
+                userUrls.push(u);
+                modified = true;
+              }
+            }
+            
+            if (modified) {
+              localStorage.setItem(key, JSON.stringify(userUrls));
+            }
+          }
           const features = jobData.ml_features;
           const prediction = jobData.ml_prediction;
           if (features && prediction) {
