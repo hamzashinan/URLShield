@@ -279,7 +279,7 @@ export const HomePage: React.FC = () => {
             
             const toAdd = [inputUrl];
             if (jobData.url) toAdd.push(jobData.url);
-            if (jobData.domain_details?.domain) toAdd.push(jobData.domain_details.domain);
+            if (jobData.ml_features?.domain) toAdd.push(jobData.ml_features.domain);
             
             for (const u of toAdd) {
               if (!userUrls.includes(u)) {
