@@ -47,21 +47,28 @@ class URLShieldAPIClient {
   private timeout = 30000;
 
   constructor() {
-    const defaultBaseURL = 'http://localhost:8080';
+  const defaultBaseURL = import.meta.env.PROD
+    ? 'https://urlshield-1ya9.onrender.com'
+    : 'http://localhost:8080';
 
-    const storedBaseURL = this.getStoredValue('urlshield_api_url');
-    const configuredBaseURL =
-      import.meta.env.VITE_API_BASE_URL || defaultBaseURL;
+  const configuredBaseURL =
+    import.meta.env.VITE_API_BASE_URL?.trim() ||
+    defaultBaseURL;
 
-    this.baseURL = (
-      storedBaseURL || configuredBaseURL
-    ).replace(/\/+$/, '');
+  // Ignore saved localhost overrides in production.
+  const storedBaseURL = import.meta.env.PROD
+    ? ''
+    : this.getStoredValue('urlshield_api_url');
 
-    const storedApiKey = this.getStoredValue('urlshield_api_key');
+  this.baseURL = (
+    storedBaseURL || configuredBaseURL
+  ).replace(/\/+$/, '');
 
-    this.apiKey =
-      storedApiKey || import.meta.env.VITE_API_KEY || '';
-  }
+  const storedApiKey = this.getStoredValue('urlshield_api_key');
+
+  this.apiKey =
+    storedApiKey || import.meta.env.VITE_API_KEY || '';
+}
 
   private getStoredValue(key: string): string {
     try {
@@ -105,7 +112,7 @@ configure(
         }
       : configOrBaseURL;
 
-  if (config.baseURL !== undefined) {
+    if (config.baseURL !== undefined && !import.meta.env.PROD) {
     this.baseURL = config.baseURL.trim().replace(/\/+$/, '');
 
     try {
