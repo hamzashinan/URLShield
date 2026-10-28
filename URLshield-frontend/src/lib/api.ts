@@ -1,5 +1,3 @@
-// URLShield API Client
-// Handles all backend communication with authentication and error handling
 
 import type {
   AdminOverviewStats,
@@ -11,7 +9,6 @@ import type {
   MetricsResponse,
   SystemMonitoringResponse,
   DomainsResponse,
-  APIError,
   ScanHistoryResponse,
   BatchUploadResponse,
   TrainingResponse,
@@ -26,50 +23,65 @@ import type {
   BulkUserActionResponse,
 } from '../types/api';
 
+// ------------------------------------------------------
+// API ERROR
+// ------------------------------------------------------
+
+class APIRequestError extends Error {
+  status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = 'APIRequestError';
+    this.status = status;
+  }
+}
+
+// ------------------------------------------------------
+// API CLIENT
+// ------------------------------------------------------
+
 class URLShieldAPIClient {
   private baseURL: string;
   private apiKey: string;
-  private timeout: number = 30000; // 30 seconds
+  private timeout = 30000;
 
   constructor() {
     const defaultBaseURL = 'http://localhost:8080';
-    const defaultApiKey = 'dev-secret-key';
 
-    // Match the backend defaults used by URLShield so the app works immediately
-    // without requiring the user to manually configure settings first.
-    const storedBaseURL = localStorage.getItem('urlshield_api_url');
-    const storedApiKey = localStorage.getItem('urlshield_api_key');
+    const storedBaseURL = this.getStoredValue('urlshield_api_url');
+    const configuredBaseURL =
+      import.meta.env.VITE_API_BASE_URL || defaultBaseURL;
 
-    this.baseURL = storedBaseURL && storedBaseURL !== 'null' && storedBaseURL !== 'undefined'
-      ? storedBaseURL
-      : import.meta.env.VITE_API_BASE_URL || defaultBaseURL;
+    this.baseURL = (
+      storedBaseURL || configuredBaseURL
+    ).replace(/\/+$/, '');
 
-    this.apiKey = storedApiKey && storedApiKey.trim() && storedApiKey !== 'null' && storedApiKey !== 'undefined'
-      ? storedApiKey
-      : import.meta.env.VITE_API_KEY || defaultApiKey;
+    const storedApiKey = this.getStoredValue('urlshield_api_key');
 
-    // Reset stale cache for the default local backend so the app does not keep
-    // using an invalid key from earlier runs while the backend is still on dev-secret-key.
-    if (this.baseURL === defaultBaseURL && this.apiKey !== defaultApiKey) {
-      this.apiKey = defaultApiKey;
-      localStorage.setItem('urlshield_api_key', defaultApiKey);
-    }
+    this.apiKey =
+      storedApiKey || import.meta.env.VITE_API_KEY || '';
+  }
 
-    if (!this.baseURL || this.baseURL === 'null' || this.baseURL === 'undefined') {
-      this.baseURL = defaultBaseURL;
-      localStorage.setItem('urlshield_api_url', defaultBaseURL);
+  private getStoredValue(key: string): string {
+    try {
+      const value = localStorage.getItem(key);
+
+      if (
+        !value ||
+        value === 'null' ||
+        value === 'undefined' ||
+        !value.trim()
+      ) {
+        return '';
+      }
+
+      return value.trim();
+    } catch {
+      return '';
     }
   }
 
-  // Update configuration (called from Settings page)
-  configure(baseURL: string, apiKey: string) {
-    this.baseURL = baseURL;
-    this.apiKey = apiKey;
-    localStorage.setItem('urlshield_api_url', baseURL);
-    localStorage.setItem('urlshield_api_key', apiKey);
-  }
-
-  // Get current configuration
   getConfig() {
     return {
       baseURL: this.baseURL,
@@ -77,86 +89,228 @@ class URLShieldAPIClient {
     };
   }
 
+  
+configure(
+  configOrBaseURL: {
+    baseURL?: string;
+    apiKey?: string;
+  } | string,
+  apiKey?: string
+): void {
+  const config =
+    typeof configOrBaseURL === 'string'
+      ? {
+          baseURL: configOrBaseURL,
+          apiKey,
+        }
+      : configOrBaseURL;
+
+  if (config.baseURL !== undefined) {
+    this.baseURL = config.baseURL.trim().replace(/\/+$/, '');
+
+    try {
+      localStorage.setItem('urlshield_api_url', this.baseURL);
+    } catch {
+      // Configuration remains available in memory.
+    }
+  }
+
+  if (config.apiKey !== undefined) {
+    this.apiKey = config.apiKey.trim();
+
+    try {
+      localStorage.setItem('urlshield_api_key', this.apiKey);
+    } catch {
+      // Configuration remains available in memory.
+    }
+  }
+}
+
+
+  // ------------------------------------------------------
+  // AUTHENTICATION HEADERS
+  // ------------------------------------------------------
+
+  private getHeaders(
+    options: RequestInit = {},
+    isFormData = false
+  ): Headers {
+    const headers = new Headers(options.headers);
+
+    if (!isFormData && !headers.has('Content-Type')) {
+      headers.set('Content-Type', 'application/json');
+    }
+
+    if (this.apiKey) {
+      headers.set('X-API-Key', this.apiKey);
+    }
+
+    const token = this.getStoredValue('urlshield_access_token');
+
+    if (token) {
+      headers.set('Authorization', `Bearer ${token}`);
+    }
+
+    return headers;
+  }
+
+  // ------------------------------------------------------
+  // ERROR HANDLING
+  // ------------------------------------------------------
+
+  private async getErrorMessage(
+    response: Response
+  ): Promise<string> {
+    const body = await response.json().catch(() => null);
+
+    if (typeof body?.detail === 'string') {
+      return body.detail;
+    }
+
+    if (Array.isArray(body?.detail)) {
+      return body.detail
+        .map((item: { msg?: string }) => item.msg || 'Validation error')
+        .join(', ');
+    }
+
+    if (typeof body?.error === 'string') {
+      return body.error;
+    }
+
+    if (typeof body?.message === 'string') {
+      return body.message;
+    }
+
+    return `HTTP ${response.status}: ${response.statusText}`;
+  }
+
+  private handleUnauthorized(endpoint: string): never {
+    if (endpoint.startsWith('/auth/')) {
+      throw new APIRequestError(
+        'Invalid email or password.',
+        401
+      );
+    }
+
+    throw new APIRequestError(
+      'Authentication failed. Please sign in again.',
+      401
+    );
+  }
+
+  // ------------------------------------------------------
+  // GENERIC REQUEST
+  // ------------------------------------------------------
+
   private async request<T>(
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
     const url = `${this.baseURL}${endpoint}`;
-    const token = localStorage.getItem('urlshield_access_token');
-
-    const headers: HeadersInit = {
-      'Content-Type': 'application/json',
-      'X-API-Key': this.apiKey,
-      ...options.headers,
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    };
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+
+    const timeoutId = setTimeout(
+      () => controller.abort(),
+      this.timeout
+    );
+
+    const isFormData = options.body instanceof FormData;
 
     try {
       const response = await fetch(url, {
         ...options,
-        headers,
+        headers: this.getHeaders(options, isFormData),
         signal: controller.signal,
       });
 
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error(endpoint.startsWith('/auth/')
-            ? 'Invalid email or password.'
-            : 'Authentication failed. Please sign in again.');
-        }
-
-        const error: APIError = await response.json().catch(() => ({
-          detail: `HTTP ${response.status}: ${response.statusText}`,
-        }));
-
-        throw new Error(error.detail);
+      if (response.status === 401) {
+        this.handleUnauthorized(endpoint);
       }
 
-      return await response.json();
+      if (!response.ok) {
+        const message = await this.getErrorMessage(response);
+
+        throw new APIRequestError(
+          message,
+          response.status
+        );
+      }
+
+      if (response.status === 204) {
+        return undefined as T;
+      }
+
+      const contentType =
+        response.headers.get('content-type') || '';
+
+      if (contentType.includes('application/json')) {
+        return await response.json() as T;
+      }
+
+      if (contentType.includes('text/')) {
+        return await response.text() as T;
+      }
+
+      return await response.blob() as T;
     } catch (error) {
-      clearTimeout(timeoutId);
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error('Request timeout. Please try again.');
+      }
 
       if (error instanceof Error) {
-        if (error.name === 'AbortError') {
-          throw new Error('Request timeout. Please try again.');
-        }
         throw error;
       }
 
-      throw new Error('Network error. Please check your connection.');
+      throw new Error(
+        'Network error. Please check your connection.'
+      );
+    } finally {
+      clearTimeout(timeoutId);
     }
   }
 
-  // Retry logic for 5xx errors
+  // ------------------------------------------------------
+  // RETRY REQUEST
+  // ------------------------------------------------------
+
   private async requestWithRetry<T>(
     endpoint: string,
     options: RequestInit = {},
-    maxRetries: number = 3
+    maxRetries = 3
   ): Promise<T> {
-    let lastError: Error | null = null;
+    let lastError: Error = new Error('Request failed.');
 
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       try {
         return await this.request<T>(endpoint, options);
       } catch (error) {
-        lastError = error as Error;
+        lastError =
+          error instanceof Error
+            ? error
+            : new Error('Request failed.');
 
-        // Don't retry on client errors (4xx) or auth errors
-        if (lastError.message.includes('401') ||
-          lastError.message.includes('400') ||
-          lastError.message.includes('404')) {
+        if (error instanceof APIRequestError) {
+          // Never retry client errors.
+          if (error.status >= 400 && error.status < 500) {
+            throw error;
+          }
+
+          // Retry only server errors.
+          if (error.status < 500) {
+            throw error;
+          }
+        } else if (
+          lastError.message.includes('timeout')
+        ) {
           throw lastError;
         }
 
-        // Wait before retry (exponential backoff)
         if (attempt < maxRetries - 1) {
+          const delay = Math.pow(2, attempt) * 1000;
+
           await new Promise(resolve =>
-            setTimeout(resolve, Math.pow(2, attempt) * 1000)
+            setTimeout(resolve, delay)
           );
         }
       }
@@ -165,40 +319,85 @@ class URLShieldAPIClient {
     throw lastError;
   }
 
-  // API Endpoints
+  // ------------------------------------------------------
+  // AUTHENTICATION
+  // ------------------------------------------------------
 
-  async register(username: string, email: string, password: string): Promise<void> {
+  async register(
+    username: string,
+    email: string,
+    password: string
+  ): Promise<void> {
     await this.request('/auth/register', {
       method: 'POST',
-      body: JSON.stringify({ username, email, password }),
+      body: JSON.stringify({
+        username,
+        email,
+        password,
+      }),
     });
   }
 
-  async login(email: string, password: string): Promise<void> {
+  async login(
+    email: string,
+    password: string
+  ): Promise<void> {
     const response = await this.request<{
       access_token: string;
       user: { email: string };
     }>('/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({
+        email,
+        password,
+      }),
     });
-    localStorage.setItem('urlshield_access_token', response.access_token);
-    localStorage.setItem('currentUser', response.user.email);
+
+    if (!response.access_token) {
+      throw new Error('Login response did not contain an access token.');
+    }
+
+    localStorage.setItem(
+      'urlshield_access_token',
+      response.access_token
+    );
+
+    localStorage.setItem(
+      'currentUser',
+      response.user.email
+    );
   }
+
+  logout(): void {
+    localStorage.removeItem('urlshield_access_token');
+    localStorage.removeItem('currentUser');
+  }
+
+  // ------------------------------------------------------
+  // HEALTH
+  // ------------------------------------------------------
 
   async health(): Promise<HealthResponse> {
-    return this.request<HealthResponse>('/health');
+    return this.request('/health');
   }
 
-  async scrape(request: ScrapeRequest): Promise<ScrapeResponse> {
-    return this.requestWithRetry<ScrapeResponse>('/scrape', {
+  // ------------------------------------------------------
+  // URL SCANNING
+  // ------------------------------------------------------
+
+  async scrape(
+    request: ScrapeRequest
+  ): Promise<ScrapeResponse> {
+    return this.requestWithRetry('/scrape', {
       method: 'POST',
       body: JSON.stringify(request),
     });
   }
 
   async getJob(jobId: string): Promise<JobDetail> {
-    return this.request<JobDetail>(`/job/${jobId}`);
+    return this.request(
+      `/job/${encodeURIComponent(jobId)}`
+    );
   }
 
   async listJobs(params?: {
@@ -207,46 +406,80 @@ class URLShieldAPIClient {
     cursor?: string;
   }): Promise<JobsResponse> {
     const searchParams = new URLSearchParams();
-    if (params?.state) searchParams.set('state', params.state);
-    if (params?.limit) searchParams.set('limit', params.limit.toString());
-    if (params?.cursor) searchParams.set('cursor', params.cursor);
+
+    if (params?.state) {
+      searchParams.set('state', params.state);
+    }
+
+    if (params?.limit !== undefined) {
+      searchParams.set('limit', String(params.limit));
+    }
+
+    if (params?.cursor) {
+      searchParams.set('cursor', params.cursor);
+    }
 
     const query = searchParams.toString();
-    const endpoint = query ? `/jobs?${query}` : '/jobs';
 
-    return this.request<JobsResponse>(endpoint);
+    return this.request(
+      query ? `/jobs?${query}` : '/jobs'
+    );
   }
 
+  // ------------------------------------------------------
+  // METRICS AND MONITORING
+  // ------------------------------------------------------
+
   async getMetrics(): Promise<MetricsResponse> {
-    return this.request<MetricsResponse>('/metrics');
+    return this.request('/metrics');
   }
 
   async getSystemMonitoring(): Promise<SystemMonitoringResponse> {
-    return this.request<SystemMonitoringResponse>('/system/monitoring');
+    return this.request('/system/monitoring');
   }
 
   async getAdminOverviewStats(): Promise<AdminOverviewStats> {
-    return this.request<AdminOverviewStats>('/admin/overview-stats');
+    return this.request('/admin/overview-stats');
   }
 
-  async getWatchlistMetrics(userId?: string): Promise<WatchlistMetrics> {
-    const endpoint = userId ? `/watchlist/metrics?user_id=${encodeURIComponent(userId)}` : '/watchlist/metrics';
-    return this.request<WatchlistMetrics>(endpoint);
+  async getWatchlistMetrics(
+    userId?: string
+  ): Promise<WatchlistMetrics> {
+    const query = userId
+      ? `?user_id=${encodeURIComponent(userId)}`
+      : '';
+
+    return this.request(`/watchlist/metrics${query}`);
   }
+
+  // ------------------------------------------------------
+  // DOMAINS
+  // ------------------------------------------------------
 
   async listDomains(params?: {
     query?: string;
     page?: number;
   }): Promise<DomainsResponse> {
     const searchParams = new URLSearchParams();
-    if (params?.query) searchParams.set('query', params.query);
-    if (params?.page) searchParams.set('page', params.page.toString());
+
+    if (params?.query) {
+      searchParams.set('query', params.query);
+    }
+
+    if (params?.page !== undefined) {
+      searchParams.set('page', String(params.page));
+    }
 
     const query = searchParams.toString();
-    const endpoint = query ? `/domains?${query}` : '/domains';
 
-    return this.request<DomainsResponse>(endpoint);
+    return this.request(
+      query ? `/domains?${query}` : '/domains'
+    );
   }
+
+  // ------------------------------------------------------
+  // SCAN HISTORY
+  // ------------------------------------------------------
 
   async getScanHistory(params?: {
     domain?: string;
@@ -254,194 +487,193 @@ class URLShieldAPIClient {
     offset?: number;
   }): Promise<ScanHistoryResponse> {
     const searchParams = new URLSearchParams();
-    if (params?.domain) searchParams.set('domain', params.domain);
-    if (params?.limit) searchParams.set('limit', params.limit.toString());
-    if (params?.offset) searchParams.set('offset', params.offset.toString());
+
+    if (params?.domain) {
+      searchParams.set('domain', params.domain);
+    }
+
+    if (params?.limit !== undefined) {
+      searchParams.set('limit', String(params.limit));
+    }
+
+    if (params?.offset !== undefined) {
+      searchParams.set('offset', String(params.offset));
+    }
 
     const query = searchParams.toString();
-    const endpoint = query ? `/scan-history?${query}` : '/scan-history';
 
-    return this.request<ScanHistoryResponse>(endpoint);
+    return this.request(
+      query ? `/scan-history?${query}` : '/scan-history'
+    );
   }
 
-  async deleteScanHistoryItem(domain: string, timestamp: string, userId?: string): Promise<{ message: string; success: boolean }> {
-    const endpoint = userId
-      ? `/scan-history/${encodeURIComponent(domain)}/${encodeURIComponent(timestamp)}?user_id=${encodeURIComponent(userId)}`
-      : `/scan-history/${encodeURIComponent(domain)}/${encodeURIComponent(timestamp)}`;
+  async deleteScanHistoryItem(
+    domain: string,
+    timestamp: string,
+    userId?: string
+  ): Promise<{ message: string; success: boolean }> {
+    const query = userId
+      ? `?user_id=${encodeURIComponent(userId)}`
+      : '';
 
-    return this.request<{ message: string; success: boolean }>(endpoint, {
-      method: 'DELETE',
-    });
+    return this.request(
+      `/scan-history/${encodeURIComponent(domain)}/${encodeURIComponent(timestamp)}${query}`,
+      { method: 'DELETE' }
+    );
   }
 
-  async clearScanHistory(userId?: string): Promise<{ message: string; success: boolean }> {
-    const endpoint = userId ? `/scan-history?user_id=${encodeURIComponent(userId)}` : '/scan-history';
+  async clearScanHistory(
+    userId?: string
+  ): Promise<{ message: string; success: boolean }> {
+    const query = userId
+      ? `?user_id=${encodeURIComponent(userId)}`
+      : '';
 
-    return this.request<{ message: string; success: boolean }>(endpoint, {
-      method: 'DELETE',
-    });
+    return this.request(
+      `/scan-history${query}`,
+      { method: 'DELETE' }
+    );
   }
 
-  // Get evidence artifact URL (for images, HTML, JSON)
+  // ------------------------------------------------------
+  // EVIDENCE
+  // ------------------------------------------------------
+
   getEvidenceUrl(
     domain: string,
     timestamp: string,
     artifact: string,
     jobId?: string | null
   ): string {
-    const url = `${this.baseURL}/evidence/${encodeURIComponent(domain)}/${encodeURIComponent(timestamp)}/${encodeURIComponent(artifact)}`;
-    return jobId ? `${url}?job_id=${encodeURIComponent(jobId)}` : url;
+    const url =
+      `${this.baseURL}/evidence/` +
+      `${encodeURIComponent(domain)}/` +
+      `${encodeURIComponent(timestamp)}/` +
+      `${encodeURIComponent(artifact)}`;
+
+    return jobId
+      ? `${url}?job_id=${encodeURIComponent(jobId)}`
+      : url;
   }
 
   async captureEvidenceScreenshot(
     domain: string,
     timestamp: string,
     jobId?: string
-  ): Promise<{ success: boolean; has_screenshot: boolean; size: number }> {
-    const query = jobId ? `?job_id=${encodeURIComponent(jobId)}` : '';
+  ): Promise<{
+    success: boolean;
+    has_screenshot: boolean;
+    size: number;
+  }> {
+    const query = jobId
+      ? `?job_id=${encodeURIComponent(jobId)}`
+      : '';
+
     return this.request(
       `/evidence/${encodeURIComponent(domain)}/${encodeURIComponent(timestamp)}/screenshot/capture${query}`,
       { method: 'POST' }
     );
   }
 
-  // SSE connection for real-time updates
+  // ------------------------------------------------------
+  // SERVER-SENT EVENTS
+  // ------------------------------------------------------
+
   createEventSource(): EventSource {
-    const url = `${this.baseURL}/events`;
-    const eventSource = new EventSource(url);
-
-    // Note: EventSource doesn't support custom headers
-    // The API key needs to be passed via query param or cookie for SSE
-    // For now, we'll use polling fallback if SSE fails
-
-    return eventSource;
+    // Native EventSource does not support custom Authorization
+    // or X-API-Key headers. Use only if the backend supports
+    // unauthenticated SSE, cookie authentication, or another
+    // secure authentication mechanism.
+    return new EventSource(`${this.baseURL}/events`);
   }
 
-  // Batch Upload Methods
+  // ------------------------------------------------------
+  // BATCH UPLOAD
+  // ------------------------------------------------------
 
-  async uploadBatch(file: File): Promise<BatchUploadResponse> {
+  async uploadBatch(
+    file: File
+  ): Promise<BatchUploadResponse> {
     const formData = new FormData();
     formData.append('file', file);
 
-    const url = `${this.baseURL}/batch/upload`;
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 seconds for file upload
-
-    try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'X-API-Key': this.apiKey,
-          // Don't set Content-Type for FormData - browser will set it with boundary
-        },
-        body: formData,
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error('Invalid API key. Please check your settings.');
-        }
-
-        const error: APIError = await response.json().catch(() => ({
-          detail: `HTTP ${response.status}: ${response.statusText}`,
-        }));
-
-        throw new Error(error.detail);
-      }
-
-      return await response.json();
-    } catch (error) {
-      clearTimeout(timeoutId);
-
-      if (error instanceof Error) {
-        if (error.name === 'AbortError') {
-          throw new Error('Upload timeout. Please try again with a smaller file.');
-        }
-        throw error;
-      }
-
-      throw new Error('Network error. Please check your connection.');
-    }
-  }
-
-  async getBatchStatus(batchId: string): Promise<BatchJobStatus> {
-    return this.request<BatchJobStatus>(`/batch/${batchId}`);
-  }
-
-  async getBatchJobs(batchId: string): Promise<JobDetail[]> {
-    return this.request<JobDetail[]>(`/batch/${batchId}/jobs`);
-  }
-
-  async listBatches(limit: number = 50): Promise<BatchJobStatus[]> {
-    const searchParams = new URLSearchParams();
-    searchParams.set('limit', limit.toString());
-
-    return this.request<BatchJobStatus[]>(`/batch?${searchParams.toString()}`);
-  }
-
-  async cancelBatch(batchId: string): Promise<{ message: string; status: string }> {
-    return this.request<{ message: string; status: string }>(`/batch/${batchId}`, {
-      method: 'DELETE',
+    return this.request('/batch/upload', {
+      method: 'POST',
+      body: formData,
     });
   }
+
+  async getBatchStatus(
+    batchId: string
+  ): Promise<BatchJobStatus> {
+    return this.request(
+      `/batch/${encodeURIComponent(batchId)}`
+    );
+  }
+
+  async getBatchJobs(
+    batchId: string
+  ): Promise<JobDetail[]> {
+    return this.request(
+      `/batch/${encodeURIComponent(batchId)}/jobs`
+    );
+  }
+
+  async listBatches(
+    limit = 50
+  ): Promise<BatchJobStatus[]> {
+    const params = new URLSearchParams({
+      limit: String(limit),
+    });
+
+    return this.request(`/batch?${params.toString()}`);
+  }
+
+  async cancelBatch(
+    batchId: string
+  ): Promise<{ message: string; status: string }> {
+    return this.request(
+      `/batch/${encodeURIComponent(batchId)}`,
+      { method: 'DELETE' }
+    );
+  }
+
+  // ------------------------------------------------------
+  // BATCH EXPORT
+  // ------------------------------------------------------
 
   async exportBatch(
     batchId: string,
     applicationId: string,
-    sourceOfDetection: string = 'Automated System',
-    cseDomainName: string = '',
-    cseName: string = ''
+    sourceOfDetection = 'Automated System',
+    cseDomainName = '',
+    cseName = ''
   ): Promise<Blob> {
-    const searchParams = new URLSearchParams();
-    searchParams.set('application_id', applicationId);
-    searchParams.set('source_of_detection', sourceOfDetection);
-    if (cseDomainName) searchParams.set('cse_domain_name', cseDomainName);
-    if (cseName) searchParams.set('cse_name', cseName);
+    const params = new URLSearchParams({
+      application_id: applicationId,
+      source_of_detection: sourceOfDetection,
+    });
 
-    const url = `${this.baseURL}/batch/${batchId}/export?${searchParams.toString()}`;
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 seconds
-
-    try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'X-API-Key': this.apiKey,
-        },
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error('Invalid API key. Please check your settings.');
-        }
-
-        const error: APIError = await response.json().catch(() => ({
-          detail: `HTTP ${response.status}: ${response.statusText}`,
-        }));
-
-        throw new Error(error.detail);
-      }
-
-      return await response.blob();
-    } catch (error) {
-      clearTimeout(timeoutId);
-
-      if (error instanceof Error) {
-        if (error.name === 'AbortError') {
-          throw new Error('Export timeout. Please try again.');
-        }
-        throw error;
-      }
-
-      throw new Error('Network error. Please check your connection.');
+    if (cseDomainName) {
+      params.set('cse_domain_name', cseDomainName);
     }
+
+    if (cseName) {
+      params.set('cse_name', cseName);
+    }
+
+    const response = await this.fetchBlob(
+      `/batch/${encodeURIComponent(batchId)}/export?${params.toString()}`,
+      'POST',
+      60000
+    );
+
+    return response;
   }
+
+  // ------------------------------------------------------
+  // FEATURE EXTRACTION
+  // ------------------------------------------------------
 
   async extractFeaturesFromExcel(
     file: File,
@@ -461,46 +693,17 @@ class URLShieldAPIClient {
       formData.append('legitimate_column', options.legitimateColumn);
     }
 
-    const url = `${this.baseURL}/feature-extraction/extract`;
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 600000); // 10 minutes timeout for feature extraction
-
-    try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'X-API-Key': this.apiKey,
-        },
-        body: formData,
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error('Invalid API key. Please check your settings.');
-        }
-
-        const errorJson = await response.json().catch(() => null);
-        const detail = errorJson?.error || `HTTP ${response.status}: ${response.statusText}`;
-        throw new Error(detail);
-      }
-
-      return await response.blob();
-    } catch (error) {
-      clearTimeout(timeoutId);
-
-      if (error instanceof Error) {
-        if (error.name === 'AbortError') {
-          throw new Error('Feature extraction timeout. Please try with fewer URLs.');
-        }
-        throw error;
-      }
-
-      throw new Error('Network error. Please check your connection.');
-    }
+    return this.fetchBlob(
+      '/feature-extraction/extract',
+      'POST',
+      600000,
+      formData
+    );
   }
+
+  // ------------------------------------------------------
+  // MODEL TRAINING
+  // ------------------------------------------------------
 
   async trainModelFromExcel(
     file: File,
@@ -513,81 +716,103 @@ class URLShieldAPIClient {
     }
   ): Promise<TrainingResponse> {
     const formData = new FormData();
+
     formData.append('train_excel', file);
+
     if (options?.testSize !== undefined) {
       formData.append('test_size', String(options.testSize));
     }
+
     if (options?.randomState !== undefined) {
       formData.append('random_state', String(options.randomState));
     }
+
     if (options?.labelColumn) {
       formData.append('label_column', options.labelColumn);
     }
+
     if (options?.modelFilename) {
       formData.append('model_filename', options.modelFilename);
     }
-    if (options?.dropColumns && Array.isArray(options.dropColumns)) {
-      for (const col of options.dropColumns) {
-        formData.append('drop_columns', col);
-      }
-    }
 
-    const url = `${this.baseURL}/training/train-from-excel`;
+    options?.dropColumns?.forEach(column => {
+      formData.append('drop_columns', column);
+    });
+
+    return this.request(
+      '/training/train-from-excel',
+      {
+        method: 'POST',
+        body: formData,
+        signal: AbortSignal.timeout(600000),
+      }
+    );
+  }
+
+  // ------------------------------------------------------
+  // SHARED BLOB REQUEST
+  // ------------------------------------------------------
+
+  private async fetchBlob(
+    endpoint: string,
+    method: string,
+    timeout: number,
+    body?: FormData
+  ): Promise<Blob> {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 600000);
+
+    const timeoutId = setTimeout(
+      () => controller.abort(),
+      timeout
+    );
 
     try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'X-API-Key': this.apiKey,
-        },
-        body: formData,
-        signal: controller.signal,
-      });
+      const response = await fetch(
+        `${this.baseURL}${endpoint}`,
+        {
+          method,
+          headers: this.getHeaders(
+            {},
+            body instanceof FormData
+          ),
+          body,
+          signal: controller.signal,
+        }
+      );
 
-      clearTimeout(timeoutId);
-
-      const json = (await response.json().catch(() => null)) as TrainingResponse | null;
+      if (response.status === 401) {
+        this.handleUnauthorized(endpoint);
+      }
 
       if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error('Invalid API key. Please check your settings.');
-        }
-
-        const detail =
-          (json && typeof json.error === 'string' && json.error) ||
-          (json && (json as unknown as { detail?: string }).detail) ||
-          `HTTP ${response.status}: ${response.statusText}`;
-
-        throw new Error(detail);
+        throw new APIRequestError(
+          await this.getErrorMessage(response),
+          response.status
+        );
       }
 
-      if (!json) {
-        throw new Error('Empty response from training endpoint.');
-      }
-
-      return json;
+      return await response.blob();
     } catch (error) {
-      clearTimeout(timeoutId);
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error('Request timeout. Please try again.');
+      }
 
       if (error instanceof Error) {
-        if (error.name === 'AbortError') {
-          throw new Error('Training request timeout. Please try again.');
-        }
         throw error;
       }
 
       throw new Error('Network error. Please check your connection.');
+    } finally {
+      clearTimeout(timeoutId);
     }
   }
 
-  // ──────────────────────────────────────────────────────────────────────
-  // User Management Methods
-  // ──────────────────────────────────────────────────────────────────────
+  // ------------------------------------------------------
+  // ADMIN USER MANAGEMENT
+  // ------------------------------------------------------
 
   async getUsersStats(): Promise<UsersStatsResponse> {
-    return this.request<UsersStatsResponse>('/admin/users/stats');
+    return this.request('/admin/users/stats');
   }
 
   async getUsers(options?: {
@@ -598,47 +823,79 @@ class URLShieldAPIClient {
     offset?: number;
   }): Promise<UsersResponse> {
     const params = new URLSearchParams();
-    if (options?.role) params.append('role', options.role);
-    if (options?.status) params.append('status', options.status);
-    if (options?.search) params.append('search', options.search);
-    if (options?.limit) params.append('limit', options.limit.toString());
-    if (options?.offset) params.append('offset', options.offset.toString());
-    
-    const queryString = params.toString();
-    const url = queryString ? `/admin/users?${queryString}` : '/admin/users';
-    return this.request<UsersResponse>(url);
+
+    if (options?.role) {
+      params.set('role', options.role);
+    }
+
+    if (options?.status) {
+      params.set('status', options.status);
+    }
+
+    if (options?.search) {
+      params.set('search', options.search);
+    }
+
+    if (options?.limit !== undefined) {
+      params.set('limit', String(options.limit));
+    }
+
+    if (options?.offset !== undefined) {
+      params.set('offset', String(options.offset));
+    }
+
+    const query = params.toString();
+
+    return this.request(
+      query ? `/admin/users?${query}` : '/admin/users'
+    );
   }
 
-  async createUser(request: CreateUserRequest): Promise<User> {
-    return this.request<User>('/admin/users', {
+  async createUser(
+    request: CreateUserRequest
+  ): Promise<User> {
+    return this.request('/admin/users', {
       method: 'POST',
-      body: JSON.stringify(request)
+      body: JSON.stringify(request),
     });
   }
 
-  async updateUser(userId: string, request: UpdateUserRequest): Promise<User> {
-    return this.request<User>(`/admin/users/${userId}`, {
-      method: 'PUT',
-      body: JSON.stringify(request)
-    });
+  async updateUser(
+    userId: string,
+    request: UpdateUserRequest
+  ): Promise<User> {
+    return this.request(
+      `/admin/users/${encodeURIComponent(userId)}`,
+      {
+        method: 'PUT',
+        body: JSON.stringify(request),
+      }
+    );
   }
 
-  async deleteUser(userId: string): Promise<{ success: boolean; message: string }> {
-    return this.request<{ success: boolean; message: string }>(`/admin/users/${userId}`, {
-      method: 'DELETE'
-    });
+  async deleteUser(
+    userId: string
+  ): Promise<{ success: boolean; message: string }> {
+    return this.request(
+      `/admin/users/${encodeURIComponent(userId)}`,
+      { method: 'DELETE' }
+    );
   }
 
-  async bulkUserAction(request: BulkUserActionRequest): Promise<BulkUserActionResponse> {
-    return this.request<BulkUserActionResponse>('/admin/users/bulk-action', {
+  async bulkUserAction(
+    request: BulkUserActionRequest
+  ): Promise<BulkUserActionResponse> {
+    return this.request('/admin/users/bulk-action', {
       method: 'POST',
-      body: JSON.stringify(request)
+      body: JSON.stringify(request),
     });
   }
 }
 
-// Export singleton instance
+// ------------------------------------------------------
+// EXPORT SINGLETON
+// ------------------------------------------------------
+
 export const apiClient = new URLShieldAPIClient();
 
-// Export class for testing
 export { URLShieldAPIClient };
