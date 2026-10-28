@@ -286,12 +286,17 @@ class BrandMappingRequest(BaseModel):
     brand: str
     domain: str
 
-# Configure CORS middleware (must be added before startup)
+
+# Configure CORS middleware
 settings = get_settings()
 
-# Support multiple frontend ports for development
 allowed_origins = [
     settings.allow_origin,
+
+    # Production frontend
+    "https://url-shield-chi.vercel.app",
+
+    # Local development
     "http://localhost:5173",
     "http://localhost:5174",
     "http://localhost:5175",
@@ -311,6 +316,7 @@ app.add_middleware(
     allow_headers=["*"],
     expose_headers=["*"],
 )
+
 
 
 # Dependency: Verify API key
