@@ -292,6 +292,7 @@ allowed_origins = [
     "https://url-shield-chi.vercel.app",
     "http://localhost:5173",
 ]
+settings = get_settings()
 
 app.add_middleware(
     CORSMiddleware,
