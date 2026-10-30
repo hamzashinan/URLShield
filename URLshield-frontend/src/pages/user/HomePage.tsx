@@ -87,7 +87,9 @@ export const HomePage: React.FC = () => {
     const fetchBrandMappings = async () => {
       setIsLoadingBrands(true);
       try {
-        const brandUrl = selectedModel === 'main' ? 'http://localhost:8080' : 'http://localhost:8081';
+        const brandUrl = selectedModel === 'main'
+          ? apiClient.getConfig().baseURL
+          : 'http://localhost:8081';
         const response = await fetch(`${brandUrl}/keywords/brands`, {
           headers: { 'X-API-Key': API_KEY },
         });
@@ -120,7 +122,9 @@ export const HomePage: React.FC = () => {
     const fetchRecent = async () => {
       setRecentLoading(true);
       try {
-        const scanUrl = selectedModel === 'main' ? 'http://localhost:8080' : 'http://localhost:8081';
+        const scanUrl = selectedModel === 'main'
+          ? apiClient.getConfig().baseURL
+          : 'http://localhost:8081';
         const accessToken = localStorage.getItem('urlshield_access_token');
         const res = await fetch(`${scanUrl}/scan-history?limit=5`, {
           headers: {
@@ -240,7 +244,9 @@ export const HomePage: React.FC = () => {
       if (hints.brand) payload.brand = hints.brand;
       if (hints.legitimateDomain) payload.legitimate_domain = hints.legitimateDomain;
 
-      const targetUrl = selectedModel === 'main' ? 'http://localhost:8080' : 'http://localhost:8081';
+      const targetUrl = selectedModel === 'main'
+        ? apiClient.getConfig().baseURL
+        : 'http://localhost:8081';
       const accessToken = localStorage.getItem('urlshield_access_token');
       const scrapeRes = await fetch(`${targetUrl}/scrape`, {
         method: 'POST',
@@ -335,11 +341,13 @@ export const HomePage: React.FC = () => {
 
     try {
       // Configure apiClient for the selected model
-      const targetUrl = selectedModel === 'main' ? 'http://localhost:8080' : 'http://localhost:8081';
+      const targetUrl = selectedModel === 'main'
+        ? apiClient.getConfig().baseURL
+        : 'http://localhost:8081';
       apiClient.configure(targetUrl, API_KEY);
 
       // Check model status using a direct fetch since apiClient doesn't have this endpoint
-      const statusUrl = selectedModel === 'main' ? 'http://localhost:8080/model/status' : 'http://localhost:8081/model/status';
+      const statusUrl = `${targetUrl}/model/status`;
       const statusRes = await fetch(statusUrl, { headers: { 'X-API-Key': API_KEY }, signal });
       if (!statusRes.ok) throw new Error('Unable to verify ML model');
       const statusData = await statusRes.json();
