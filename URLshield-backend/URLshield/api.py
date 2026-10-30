@@ -275,6 +275,16 @@ app = FastAPI(
     version=__version__
 )
 app.include_router(auth_router)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "https://url-shield-chi.vercel.app",
+        "http://localhost:5173",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 # =============================================================================
@@ -293,16 +303,6 @@ allowed_origins = [
     "http://localhost:5173",
 ]
 settings = get_settings()
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=allowed_origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-
 
 # Dependency: Verify API key
 async def verify_api_key(
@@ -3069,3 +3069,12 @@ async def bulk_user_action(request: BulkUserActionRequest):
         failed_ids=failed_ids,
         message=f"Successfully {request.action}d {affected_count} user(s)",
     )
+
+
+app = CORSMiddleware(
+    app=app,
+    allow_origins=allowed_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)

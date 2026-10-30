@@ -74,7 +74,7 @@ class Settings(BaseSettings):
     )
 
     database_url: str = Field(
-    default="mysql+pymysql://root:YOUR_PASSWORD@localhost:3306/urlshield",
+    default="",
     alias="URLSHIELD_DATABASE_URL"
     )
 
