@@ -55,11 +55,21 @@ class AuthResponse(BaseModel):
 # JWT functions
 # -----------------------------
 
+def _get_jwt_secret_key() -> str:
+    secret_key = get_settings().jwt_secret_key
+
+    if not secret_key:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Authentication is not configured. Set URLSHIELD_JWT_SECRET_KEY.",
+        )
+
+    return secret_key
+
+
 def create_access_token(user: DBUser) -> str:
     settings = get_settings()
-
-    if not settings.jwt_secret_key:
-        raise RuntimeError("URLSHIELD_JWT_SECRET_KEY is not configured.")
+    secret_key = _get_jwt_secret_key()
 
     now = datetime.now(timezone.utc)
     expires_at = now + timedelta(
@@ -74,7 +84,7 @@ def create_access_token(user: DBUser) -> str:
 
     return jwt.encode(
         payload,
-        settings.jwt_secret_key,
+        secret_key,
         algorithm="HS256",
     )
 
@@ -94,15 +104,10 @@ def get_current_user(
     if credentials is None:
         raise unauthorized
 
-    settings = get_settings()
-
-    if not settings.jwt_secret_key:
-        raise RuntimeError("JWT secret is not configured.")
-
     try:
         payload = jwt.decode(
             credentials.credentials,
-            settings.jwt_secret_key,
+            _get_jwt_secret_key(),
             algorithms=["HS256"],
         )
 
@@ -141,6 +146,8 @@ def register(
     request: RegisterRequest,
     db: Session = Depends(get_db),
 ):
+    _get_jwt_secret_key()
+
     email = str(request.email).strip().lower()
     username = request.username.strip()
 

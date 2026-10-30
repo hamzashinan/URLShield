@@ -150,6 +150,18 @@ dev-secret-key
 
 If the frontend shows an “Invalid API key” message, check that the browser is not holding stale local storage values and that the backend is running with the same key.
 
+The backend creates its SQLAlchemy tables when the API starts. Production deployments
+must set `URLSHIELD_DATABASE_URL` to a reachable, persistent database and
+`URLSHIELD_JWT_SECRET_KEY` to a long, random secret in the hosting provider's
+environment settings. For example, generate a secret locally with:
+
+```powershell
+python -c "import secrets; print(secrets.token_urlsafe(48))"
+```
+
+Do not use the development API key as the JWT secret or commit either production
+secret to the repository.
+
 ## Common Commands
 
 ### Frontend build

@@ -22,7 +22,7 @@ from pydantic import BaseModel
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 from sqlalchemy.orm import Session
 
-from URLshield.database import SessionLocal, get_db
+from URLshield.database import Base, SessionLocal, engine, get_db
 from URLshield.db_models import ScanJob, User as DBUser
 from URLshield import __version__
 from URLshield.config import Settings, get_settings
@@ -288,24 +288,9 @@ class BrandMappingRequest(BaseModel):
 
 
 # Configure CORS middleware
-settings = get_settings()
-
 allowed_origins = [
-    settings.allow_origin,
-
-    # Production frontend
     "https://url-shield-chi.vercel.app",
-
-    # Local development
     "http://localhost:5173",
-    "http://localhost:5174",
-    "http://localhost:5175",
-    "http://localhost:5176",
-    "http://localhost:3000",
-    "http://127.0.0.1:5173",
-    "http://127.0.0.1:5174",
-    "http://127.0.0.1:5175",
-    "http://127.0.0.1:5176",
 ]
 
 app.add_middleware(
@@ -314,7 +299,6 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    expose_headers=["*"],
 )
 
 
@@ -341,6 +325,7 @@ def get_queue(settings: Settings = Depends(get_settings)) -> JobQueue:
 @app.on_event("startup")
 async def startup_event():
     """Application startup"""
+    Base.metadata.create_all(bind=engine)
     logger.info("api_started", version=__version__, port=settings.api_port)
 
 
